@@ -248,16 +248,69 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:48
 .toast{position:fixed;top:84px;left:50%;transform:translateX(-50%) translateY(-8px);background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.25);border-radius:7px;padding:10px 20px;font-size:11px;color:var(--a);letter-spacing:2px;text-transform:uppercase;opacity:0;transition:all 0.3s;z-index:500;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 @media(max-width:900px){
-  nav{padding:0 24px}.nav-links{display:none}
-  .section-inner{padding:80px 24px}
-  .how-grid,.philosophy-grid{grid-template-columns:1fr;gap:48px}
-  .features-grid{grid-template-columns:1fr}.feature-card{border-radius:12px!important}
-  .stats-inner{grid-template-columns:repeat(2,1fr);padding:32px 24px;gap:24px}
+  /* Landing nav */
+  nav{padding:0 20px}
+  .nav-links{display:none}
+  /* Landing hero */
+  .hero{padding:100px 20px 70px}
+  .hero-signals{display:none}
+  .hero-actions{flex-direction:column;align-items:center}
+  .btn-primary,.btn-secondary{width:100%;max-width:320px;text-align:center}
+  /* Stats strip */
+  .stats-inner{grid-template-columns:repeat(2,1fr);padding:28px 20px;gap:20px}
+  .stat-num{font-size:32px}
+  /* Sections */
+  .section-inner{padding:64px 20px}
+  .how-grid,.philosophy-grid{grid-template-columns:1fr;gap:40px}
+  .features-grid{grid-template-columns:1fr}
+  .feature-card{border-radius:12px!important}
   .trust-grid{grid-template-columns:1fr}
-  footer{flex-direction:column;text-align:center;padding:40px 24px}
-  .hero-signals{display:none}.cta-inner{padding:80px 24px}
-  .app-header-inner,.tabs,.feed,.stats-bar-inner{padding-left:20px;padding-right:20px}
-  .compose-fab{right:20px;bottom:24px}
+  .cta-inner{padding:64px 20px}
+  footer{flex-direction:column;text-align:center;padding:36px 20px;gap:16px}
+  .footer-links{justify-content:center;flex-wrap:wrap}
+  /* App header */
+  .app-header-inner{padding:0 16px;height:60px}
+  .app-logo{font-size:16px;letter-spacing:2px}
+  .app-logo-sub{display:none}
+  .app-logo-img{height:42px}
+  .live-pill{padding:5px 10px;font-size:10px}
+  /* Tabs */
+  .tabs-wrap{top:60px}
+  .tabs{padding:0 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{padding:14px 16px;font-size:11px;letter-spacing:1.5px;white-space:nowrap}
+  /* Stats bar */
+  .stats-bar-inner{padding:10px 16px;gap:20px}
+  .sstat-value{font-size:15px}
+  .sstat-label{font-size:10px;letter-spacing:1px}
+  /* Feed */
+  .feed{padding:16px 12px 120px}
+  /* Post card */
+  .post-card{padding:18px 16px;border-radius:12px}
+  .post-text{font-size:15px;margin-bottom:14px}
+  .post-time{font-size:10px}
+  .action-btn{padding:6px 10px;font-size:11px;gap:5px}
+  /* Comments */
+  .comment-replies{margin-left:20px}
+  .reply-compose{margin-left:20px}
+  /* Compose FAB */
+  .compose-fab{right:16px;bottom:20px;width:52px;height:52px;font-size:26px;border-radius:12px}
+  /* Compose modal — full screen bottom sheet on mobile */
+  .compose-overlay{padding:0;align-items:flex-end}
+  .compose-modal{border-radius:20px 20px 0 0;padding:20px 16px 32px;max-width:100%}
+  .compose-textarea{font-size:15px;min-height:110px}
+}
+@media(max-width:480px){
+  .stats-inner{grid-template-columns:1fr 1fr;gap:16px;padding:24px 16px}
+  .stat-num{font-size:28px}
+  .post-actions{gap:4px}
+  .action-btn{padding:5px 8px;font-size:10px}
+  .app-header-right{gap:6px}
+  .back-btn{padding:5px 10px;font-size:9px}
+  .refresh-btn{width:32px;height:32px}
+  .post-card{padding:14px 12px}
+  .post-text{font-size:14px}
+  .section-title{font-size:28px}
 }
 </style>
 </head>
@@ -397,7 +450,8 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:48
     <button class="tab" data-tab="deep">deep</button>
   </div></div>
   <div class="stats-bar"><div class="stats-bar-inner">
-    <div class="sstat"><span class="sstat-value" id="statCount">0</span><span class="sstat-label">present</span></div>
+    <div class="sstat"><span class="sstat-value" id="statCount">0</span><span class="sstat-label">signals</span></div>
+    <div class="sstat"><span class="sstat-value" id="liveCount">—</span><span class="sstat-label">live now</span></div>
   </div></div>
   <div class="feed" id="feed">
     <div class="loading-state" id="loadingState">tuning into the stream...</div>
@@ -440,7 +494,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:48
   performance.now=function(){return Math.floor(_now()/100)*100+Math.random()*100;};
   var _fetch=window.fetch;
   window.fetch=function(url,opts){opts=opts||{};opts.credentials='omit';opts.referrerPolicy='no-referrer';return _fetch(url,opts);};
-  function wipe(){try{localStorage.clear();}catch(e){}try{sessionStorage.clear();}catch(e){}}
+  function wipe(){try{localStorage.clear();}catch(e){}}
   wipe();window.addEventListener('beforeunload',wipe);window.addEventListener('pagehide',wipe);
   var likelyTor=(!navigator.plugins||navigator.plugins.length===0)&&window.screen.width===1000;
   if(!likelyTor){window.addEventListener('DOMContentLoaded',function(){
@@ -476,7 +530,9 @@ function enterStream(){
   document.getElementById('landing').classList.add('hidden');
   document.getElementById('app').classList.add('visible');
   window.scrollTo(0,0);
+  subscribeRealtime();
   loadSignals();
+  startPresence();
 }
 function goHome(){
   document.getElementById('app').classList.remove('visible');
@@ -501,11 +557,19 @@ document.querySelectorAll('.features-grid,.trust-grid,.stats-inner').forEach(fun
 // APP LOGIC
 // ══════════════════════════════════════
 var CHAR_LIMIT=5000;
+var RATE_LIMIT_MS=30000;
+var lastPostTime=0;
+var mySignalIds=(function(){try{return JSON.parse(sessionStorage.getItem('cf_mine')||'[]');}catch(e){return[];}})();
+// Persist liked signal/comment IDs across refreshes
+var likedSignalIds=(function(){try{return JSON.parse(localStorage.getItem('cf_liked_signals')||'[]');}catch(e){return[];}})();
+var likedCommentIds=(function(){try{return JSON.parse(localStorage.getItem('cf_liked_comments')||'[]');}catch(e){return[];}})();
+function saveLikedSignals(){try{localStorage.setItem('cf_liked_signals',JSON.stringify(likedSignalIds));}catch(e){}}
+function saveLikedComments(){try{localStorage.setItem('cf_liked_comments',JSON.stringify(likedCommentIds));}catch(e){}}
 var activeTab='stream';
 var deleteConfirm={};
 var signalsCache=[];
 
-function formatNum(n){return n>=1000?(n/1000).toFixed(1)+'k':n;}
+function formatNum(n){n=parseInt(n)||0;return n>=1000?(n/1000).toFixed(1)+'k':n;}
 function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function formatTime(ts){return new Date(ts).toLocaleString(navigator.language,{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});}
 
@@ -544,6 +608,8 @@ function subscribeRealtime(){
   realtimeChannel=sb.channel('public:signals')
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'signals'},function(payload){
       if(activeTab==='stream'){
+        // Skip if already optimistically added
+        if(document.querySelector('[data-signal-id="'+payload.new.id+'"]'))return;
         signalsCache.unshift(payload.new);
         document.getElementById('statCount').textContent=signalsCache.length;
         var feed=document.getElementById('feed');
@@ -561,6 +627,34 @@ function subscribeRealtime(){
       if(!signalsCache.length)document.getElementById('emptyState').style.display='block';
     })
     .subscribe();
+}
+
+// ── Live presence ──
+var presenceChannel=null;
+function startPresence(){
+  if(presenceChannel)return;
+  // Use a stable uid stored in sessionStorage so the same tab doesn't
+  // re-register on hot-reloads, and use localStorage so the same browser
+  // across multiple tabs shares one identity slot.
+  var uid=(function(){
+    try{
+      var k='cf_presence_uid';
+      var existing=localStorage.getItem(k);
+      if(existing)return existing;
+      var fresh=Math.random().toString(36).slice(2)+Date.now().toString(36);
+      localStorage.setItem(k,fresh);
+      return fresh;
+    }catch(e){return Math.random().toString(36).slice(2);}
+  })();
+  presenceChannel=sb.channel('presence:stream',{config:{presence:{key:uid}}});
+  presenceChannel
+    .on('presence',{event:'sync'},function(){
+      var n=Object.keys(presenceChannel.presenceState()).length;
+      document.getElementById('liveCount').textContent=n||1;
+    })
+    .subscribe(async function(status){
+      if(status==='SUBSCRIBED')await presenceChannel.track({t:Date.now()});
+    });
 }
 
 // ── Build comment element ──
@@ -592,13 +686,21 @@ function buildComment(cmt,depth,signalId){
   likeBtn.onclick=async function(e){
     e.stopPropagation();
     var liked=likeBtn.classList.contains('liked');
-    var fn=liked?'decrement_comment_likes':'increment_comment_likes';
-    await sb.rpc(fn,{row_id:cmt.id});
+    var newCount=(cmt.likes||0)+(liked?-1:1);
     cmt._liked=!liked;
-    cmt.likes=(cmt.likes||0)+(cmt._liked?1:-1);
+    cmt.likes=newCount;
     likeBtn.classList.toggle('liked',cmt._liked);
     likeBtn.querySelector('svg').setAttribute('fill',cmt._liked?'currentColor':'none');
-    likeBtn.querySelector('span').textContent=cmt.likes;
+    likeBtn.querySelector('span').textContent=newCount;
+    // Persist liked state
+    if(cmt._liked){
+      if(likedCommentIds.indexOf(cmt.id)===-1){likedCommentIds.push(cmt.id);}
+    }else{
+      likedCommentIds=likedCommentIds.filter(function(id){return id!==cmt.id;});
+    }
+    saveLikedComments();
+    // Save to DB
+    await sb.from('comments').update({likes:newCount}).eq('id',cmt.id);
   };
 
   // delete comment
@@ -662,7 +764,11 @@ function buildComment(cmt,depth,signalId){
 // ── Nest flat comments into tree ──
 function nestComments(flat){
   var map={};var roots=[];
-  flat.forEach(function(c){c._replies=[];c._liked=false;map[c.id]=c;});
+  flat.forEach(function(c){
+    c._replies=[];
+    c._liked=likedCommentIds.indexOf(c.id)!==-1;
+    map[c.id]=c;
+  });
   flat.forEach(function(c){
     if(c.parent_id&&map[c.parent_id]){map[c.parent_id]._replies.push(c);}
     else{roots.push(c);}
@@ -672,6 +778,8 @@ function nestComments(flat){
 
 // ── Make post card ──
 function makeCard(signal,index){
+  // Restore liked state from localStorage
+  if(likedSignalIds.indexOf(signal.id)!==-1){signal._liked=true;}
   var card=document.createElement('div');
   card.className='post-card';
   card.setAttribute('data-signal-id',signal.id);
@@ -690,9 +798,9 @@ function makeCard(signal,index){
           '<svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9a1 1 0 0 1-1 1H4l-2.5 2.5V2a1 1 0 0 1 1-1h8.5a1 1 0 0 1 1 1v7z"/></svg>'+
           '<span class="cmt-count">'+formatNum(signal.comments)+'</span>'+
         '</button>'+
-        '<button class="action-btn delete-btn" data-action="delete">'+
-          '<svg width="14" height="14" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3.5h9M5 3.5V2.5h3v1M10.5 3.5l-.5 7a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1l-.5-7"/></svg>'+
-        '</button>'+
+        (mySignalIds.indexOf(signal.id)!==-1?
+        '<button class="action-btn delete-btn" data-action="delete"><svg width="14" height="14" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3.5h9M5 3.5V2.5h3v1M10.5 3.5l-.5 7a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1l-.5-7"/></svg></button>'
+        :'')+
       '</div>'+
     '</div>'+
     '<div class="comments-section" style="display:none">'+
@@ -706,25 +814,65 @@ function makeCard(signal,index){
 
   // like signal
   var likeBtn=card.querySelector('[data-action="like"]');
-  likeBtn.onclick=async function(){
+  likeBtn.onclick=async function(e){
+    e.stopPropagation();
     var liked=likeBtn.classList.contains('liked');
-    var fn=liked?'decrement_signal_likes':'increment_signal_likes';
-    await sb.rpc(fn,{row_id:signal.id});
+    var newCount=(signal.likes||0)+(liked?-1:1);
+    // Optimistic UI update
     signal._liked=!liked;
-    signal.likes=(signal.likes||0)+(signal._liked?1:-1);
+    signal.likes=newCount;
     likeBtn.classList.toggle('liked',signal._liked);
     likeBtn.querySelector('svg').setAttribute('fill',signal._liked?'currentColor':'none');
     likeBtn.querySelector('span').textContent=formatNum(signal.likes);
+    // Persist liked state locally
+    if(signal._liked){
+      if(likedSignalIds.indexOf(signal.id)===-1){likedSignalIds.push(signal.id);}
+    }else{
+      likedSignalIds=likedSignalIds.filter(function(id){return id!==signal.id;});
+    }
+    saveLikedSignals();
+    // Save to DB
+    await sb.from('signals').update({likes:newCount}).eq('id',signal.id);
   };
 
-  // delete signal
-  card.querySelector('[data-action="delete"]').onclick=async function(){
-    if(deleteConfirm[signal.id]){
-      await sb.from('signals').delete().eq('id',signal.id);
+  // delete signal — only attached when button exists (own posts only)
+  var delBtn=card.querySelector('[data-action="delete"]');
+  if(delBtn){
+    delBtn.onclick=async function(e){
+      e.stopPropagation();
+      if(deleteConfirm[signal.id]){
+        var r=await sb.from('signals').delete().eq('id',signal.id);
+        if(!r.error){
+          card.style.transition='opacity 0.3s';
+          card.style.opacity='0';
+          setTimeout(function(){
+            card.remove();
+            signalsCache=signalsCache.filter(function(s){return s.id!==signal.id;});
+            mySignalIds=mySignalIds.filter(function(id){return id!==signal.id;});
+            try{sessionStorage.setItem('cf_mine',JSON.stringify(mySignalIds));}catch(e){}
+            document.getElementById('statCount').textContent=signalsCache.length;
+            if(!signalsCache.length)document.getElementById('emptyState').style.display='block';
+          },300);
+        }
+      }else{
+        deleteConfirm[signal.id]=true;
+        delBtn.classList.add('confirm');
+        setTimeout(function(){
+          deleteConfirm[signal.id]=false;
+          delBtn.classList.remove('confirm');
+        },3000);
+      }
+    };
+  }
+
+  // card click — toggle comments (clicking anywhere on card opens/closes)
+  card.onclick=function(e){
+    // only trigger if click landed directly on card or post-text (not on action buttons / comment section)
+    if(e.target.closest('.post-actions')||e.target.closest('.comments-section'))return;
+    if(cmtSection.style.display==='none'||cmtSection.style.display===''){
+      openComments();
     }else{
-      var btn=this;
-      deleteConfirm[signal.id]=true;btn.classList.add('confirm');
-      setTimeout(function(){deleteConfirm[signal.id]=false;btn.classList.remove('confirm');},3000);
+      closeComments();
     }
   };
 
@@ -735,22 +883,32 @@ function makeCard(signal,index){
   var inp=card.querySelector('.comment-input');
   var submitBtn=card.querySelector('.comment-submit');
 
-  cmtBtn.onclick=async function(){
-    var open=cmtSection.style.display==='none';
-    cmtSection.style.display=open?'block':'none';
-    cmtBtn.classList.toggle('active',open);
-    if(open){
-      thread.innerHTML='<div class="no-comments">loading responses...</div>';
-      var res=await sb.from('comments').select('*').eq('signal_id',signal.id).order('created_at',{ascending:true});
-      thread.innerHTML='';
-      if(res.error||!res.data||!res.data.length){
-        var em=document.createElement('p');em.className='no-comments';em.textContent='no responses yet. be the first.';
-        thread.appendChild(em);
-      }else{
-        var nested=nestComments(res.data);
-        nested.forEach(function(c){thread.appendChild(buildComment(c,0,signal.id));});
-      }
-      setTimeout(function(){inp.focus();},80);
+  async function openComments(){
+    cmtSection.style.display='block';
+    cmtBtn.classList.add('active');
+    thread.innerHTML='<div class="no-comments">loading responses...</div>';
+    var res=await sb.from('comments').select('*').eq('signal_id',signal.id).order('created_at',{ascending:true});
+    thread.innerHTML='';
+    if(res.error||!res.data||!res.data.length){
+      var em=document.createElement('p');em.className='no-comments';em.textContent='no responses yet. be the first.';
+      thread.appendChild(em);
+    }else{
+      var nested=nestComments(res.data);
+      nested.forEach(function(c){thread.appendChild(buildComment(c,0,signal.id));});
+    }
+    setTimeout(function(){inp.focus();},80);
+  }
+  function closeComments(){
+    cmtSection.style.display='none';
+    cmtBtn.classList.remove('active');
+  }
+
+  cmtBtn.onclick=function(e){
+    e.stopPropagation();
+    if(cmtSection.style.display==='none'||cmtSection.style.display===''){
+      openComments();
+    }else{
+      closeComments();
     }
   };
 
@@ -760,9 +918,10 @@ function makeCard(signal,index){
     var t=inp.value.trim();if(!t)return;
     var res=await sb.from('comments').insert({signal_id:signal.id,parent_id:null,text:t}).select().single();
     if(res.error){console.error(res.error);return;}
-    // increment comment count on signal
-    await sb.rpc('increment_signal_comments',{row_id:signal.id});
-    signal.comments=(signal.comments||0)+1;
+    // increment comment count on signal via direct update
+    var newCmtCount=(signal.comments||0)+1;
+    await sb.from('signals').update({comments:newCmtCount}).eq('id',signal.id);
+    signal.comments=newCmtCount;
     card.querySelector('.cmt-count').textContent=formatNum(signal.comments);
     inp.value='';submitBtn.classList.remove('active');
     // remove empty state, add new comment
@@ -773,7 +932,7 @@ function makeCard(signal,index){
   }
   submitBtn.onclick=function(e){e.stopPropagation();addComment();};
   inp.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();addComment();}};
-
+  inp.onclick=function(e){e.stopPropagation();};
   return card;
 }
 
@@ -813,34 +972,41 @@ textarea.onkeydown=function(e){if(e.key==='Enter'&&e.metaKey)postBtn.click();};
 
 postBtn.onclick=async function(){
   var text=textarea.value.trim();if(!text)return;
+  var now=Date.now();
+  if(lastPostTime&&(now-lastPostTime)<RATE_LIMIT_MS){
+    var wait=Math.ceil((RATE_LIMIT_MS-(now-lastPostTime))/1000);
+    charCountEl.textContent='slow down — wait '+wait+'s';
+    charCountEl.className='char-count limit';
+    return;
+  }
   postBtn.disabled=true;
   var res=await sb.from('signals').insert({text:text}).select().single();
   if(res.error){console.error(res.error);postBtn.disabled=false;return;}
+  lastPostTime=Date.now();
+  mySignalIds.push(res.data.id);
+  try{sessionStorage.setItem('cf_mine',JSON.stringify(mySignalIds));}catch(e){}
   textarea.value='';charCountEl.textContent=CHAR_LIMIT+' remaining';
   charCountEl.className='char-count';
   overlay.classList.remove('open');
   activeTab='stream';
   document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab==='stream');});
   toast.classList.add('show');setTimeout(function(){toast.classList.remove('show');},3000);
-  // realtime will pick it up, but force reload if not on stream
-  await loadSignals();
-  subscribeRealtime();
+  // Optimistically prepend card immediately — don't wait for realtime event
+  var newSignal=res.data;
+  if(!document.querySelector('[data-signal-id="'+newSignal.id+'"]')){
+    signalsCache.unshift(newSignal);
+    document.getElementById('statCount').textContent=signalsCache.length;
+    var feed=document.getElementById('feed');
+    document.getElementById('emptyState').style.display='none';
+    var newCard=makeCard(newSignal,0);
+    newCard.style.animationDelay='0ms';
+    var firstCard=feed.querySelector('.post-card');
+    if(firstCard){feed.insertBefore(newCard,firstCard);}else{feed.appendChild(newCard);}
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  postBtn.disabled=false;
 };
 
-// init realtime when app opens
-function loadSignals(){
-  document.getElementById('loadingState').style.display='block';
-  document.getElementById('emptyState').style.display='none';
-  document.querySelectorAll('#feed .post-card').forEach(function(e){e.remove();});
-  var order=activeTab==='rising'?'likes':activeTab==='deep'?'comments':'created_at';
-  return sb.from('signals').select('*').order(order,{ascending:false}).limit(100).then(function(res){
-    document.getElementById('loadingState').style.display='none';
-    if(res.error){console.error(res.error);return;}
-    signalsCache=(res.data||[]).map(function(s){s._liked=false;return s;});
-    renderSignals();
-    subscribeRealtime();
-  });
-}
 </script>
 </body>
 </html>
