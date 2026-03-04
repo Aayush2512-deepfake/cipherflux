@@ -1217,20 +1217,20 @@ function makeCard(signal,index){
     //     UPDATE signals SET likes = GREATEST(0, likes + p_delta) WHERE id = p_id
     //     RETURNING likes; $$;
     var delta=liked?-1:1;
-    var atomicRes=await sb.rpc('increment_signal_likes',{p_id:signal.id,p_delta:delta});
-    var newCount;
-    if(atomicRes.error){
-      // RPC not deployed yet — fallback to read-modify-write (remove once RPC is live)
-      console.warn('[increment_signal_likes] RPC not found, using fallback — deploy the RPC!');
-      var dbRow=await sb.from('signals').select('likes').eq('id',signal.id).single();
-      var realCount=(dbRow.error||dbRow.data.likes==null)?0:dbRow.data.likes;
-      newCount=Math.max(0,realCount+delta);
-      await sb.from('signals').update({likes:newCount}).eq('id',signal.id);
-    } else {
-      newCount=atomicRes.data;
-    }
+    // signal.likes is sourced from the live signal_likes join count (not the
+    // denormalized column), so it's the correct base. Derive the new count
+    // directly from it rather than trusting what the RPC returns (the RPC
+    // operates on the denormalized column which can be stale/zero).
+    var newCount=Math.max(0,signal.likes+delta);
     signal.likes=newCount;
     likeBtn.querySelector('span').textContent=formatNum(newCount);
+    // Still fire the RPC so the denormalized column stays in sync for DB-side ordering.
+    sb.rpc('increment_signal_likes',{p_id:signal.id,p_delta:delta}).then(function(atomicRes){
+      if(atomicRes.error){
+        console.warn('[increment_signal_likes] RPC not found, using fallback — deploy the RPC!');
+        sb.from('signals').update({likes:newCount}).eq('id',signal.id);
+      }
+    });
   };
 
   // delete signal — only attached when button exists (own posts only)
