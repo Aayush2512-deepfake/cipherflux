@@ -850,6 +850,15 @@ async function loadSignals(){
     s.comments=(cmtJoin&&cmtJoin[0])?parseInt(cmtJoin[0].count)||0:0;
   });
 
+  // Re-sort client-side after normalising counts, since the DB order column
+  // may be stale (the denormalised likes/comments columns can lag behind the
+  // joined live counts we just computed above).
+  if(activeTab==='rising'){
+    rows.sort(function(a,b){return b.likes-a.likes;});
+  } else if(activeTab==='deep'){
+    rows.sort(function(a,b){return b.comments-a.comments;});
+  }
+
   signalsCache=rows;
   renderSignals();
 }
