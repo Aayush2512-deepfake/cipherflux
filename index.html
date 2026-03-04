@@ -1351,20 +1351,19 @@ function makeCard(signal,index){
     var res=await sb.from('comments').insert({signal_id:signal.id,parent_id:null,text:t}).select().single();
     commentSubmitting=false;submitBtn.style.opacity='';
     if(res.error){console.error(res.error);submitBtn.classList.toggle('active',inp.value.trim().length>0);return;}
-    // F-08: Atomic comment count increment via RPC
-    var cmtInc=await sb.rpc('increment_signal_comments',{p_id:signal.id,p_delta:1});
-    var newCmts;
-    if(cmtInc.error){
-      console.warn('[increment_signal_comments] RPC not found, using fallback — deploy the RPC!');
-      var dbSig=await sb.from('signals').select('comments').eq('id',signal.id).single();
-      var realCmts=(dbSig.error||dbSig.data.comments==null)?0:dbSig.data.comments;
-      newCmts=realCmts+1;
-      await sb.from('signals').update({comments:newCmts}).eq('id',signal.id);
-    } else {
-      newCmts=cmtInc.data;
-    }
+    // signal.comments is sourced from the live join count (accurate), so derive
+    // the new count directly from it rather than trusting the RPC which operates
+    // on the stale denormalized column.
+    var newCmts=signal.comments+1;
     signal.comments=newCmts;
     card.querySelector('.cmt-count').textContent=formatNum(newCmts);
+    // Still fire the RPC in the background to keep the denormalized column in sync.
+    sb.rpc('increment_signal_comments',{p_id:signal.id,p_delta:1}).then(function(cmtInc){
+      if(cmtInc.error){
+        console.warn('[increment_signal_comments] RPC not found, using fallback — deploy the RPC!');
+        sb.from('signals').update({comments:newCmts}).eq('id',signal.id);
+      }
+    });
     inp.value='';submitBtn.classList.remove('active');
     // Fix #1: Track this comment as ours for session-owned deletion
     myCommentIds.push(res.data.id);
