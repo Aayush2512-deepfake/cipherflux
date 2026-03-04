@@ -730,13 +730,17 @@ var DEVICE_FP=(function(){
   // No localStorage used — nothing to wipe
   function wipe(){}
   window.addEventListener('beforeunload',wipe);window.addEventListener('pagehide',wipe);
-  var likelyTor=(!navigator.plugins||navigator.plugins.length===0)&&window.screen.width===1000;
-  if(!likelyTor){window.addEventListener('DOMContentLoaded',function(){
+  // Fix #8: Show Tor/VPN tip banner on first visit per session (not based on fragile heuristics)
+  var torTipDismissed=false;try{torTipDismissed=!!sessionStorage.getItem('cf_tor_dismissed');}catch(e){}
+  if(!torTipDismissed){window.addEventListener('DOMContentLoaded',function(){
     var b=document.createElement('div');b.id='tor-tip';
     b.style.cssText='position:fixed;bottom:0;left:0;right:0;z-index:9999;background:rgba(7,6,15,0.97);border-top:1px solid rgba(167,139,250,0.15);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;font-family:IBM Plex Mono,monospace;font-size:10px;letter-spacing:2px;color:rgba(167,139,250,0.6);text-transform:uppercase;backdrop-filter:blur(24px)';
     b.innerHTML='<span>\u26a0 for maximum anonymity, use <strong style="color:#a78bfa">tor browser</strong> or a trusted vpn</span><button id="tor-dismiss" style="background:none;border:1px solid rgba(167,139,250,0.2);border-radius:6px;padding:4px 14px;color:rgba(167,139,250,0.5);cursor:pointer;font-family:inherit;font-size:10px;letter-spacing:2px">dismiss</button>';
     document.body.appendChild(b);
-    document.getElementById('tor-dismiss').onclick=function(){b.remove();};
+    document.getElementById('tor-dismiss').onclick=function(){
+      b.remove();
+      try{sessionStorage.setItem('cf_tor_dismissed','1');}catch(e){}
+    };
   });}
 })();
 
@@ -794,16 +798,17 @@ var CHAR_LIMIT=5000;
 var RATE_LIMIT_MS=30000;
 var lastPostTime=0;
 var mySignalIds=(function(){try{return JSON.parse(sessionStorage.getItem('cf_mine')||'[]');}catch(e){return[];}})();
+// Fix #1: Track comment IDs posted in this session for ownership-gated deletion
+var myCommentIds=(function(){try{return JSON.parse(sessionStorage.getItem('cf_mine_cmts')||'[]');}catch(e){return[];}})();
 // Like state sourced purely from Supabase signal_likes table — no localStorage
 var likedSignalIds=[];
 var likedCommentIds=[];
 function saveLikedSignals(){} // no-op: DB is source of truth
 function saveLikedComments(){} // no-op: DB is source of truth
 var activeTab='stream';
-var deleteConfirm={};
 var signalsCache=[];
 
-function formatNum(n){n=parseInt(n)||0;return n>=1000?(n/1000).toFixed(1)+'k':n;}
+function formatNum(n){n=parseInt(n)||0;if(n>=1000){var k=n/1000;return(k===Math.floor(k)?k.toFixed(0):k.toFixed(1))+'k';}return n;}
 function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function formatTime(ts){return new Date(ts).toLocaleString(navigator.language,{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});}
 
@@ -866,6 +871,8 @@ function subscribeRealtime(){
   realtimeChannel=sb.channel('public:signals')
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'signals',filter:'mod_status=eq.visible'},function(payload){
       if(activeTab==='stream'){
+        // Guard: re-validate mod_status client-side in case filter leaks flagged rows
+        if(payload.new.mod_status&&payload.new.mod_status!=='visible')return;
         // Skip if already optimistically added
         if(document.querySelector('[data-signal-id="'+payload.new.id+'"]'))return;
         // Realtime payload has no joined counts — ensure they start at 0
@@ -983,19 +990,44 @@ function buildComment(cmt,depth,signalId){
     likeBtn.querySelector('span').textContent=newCmtCount;
   };
 
-  // delete comment
+  // Fix #1: Only show delete button if this device posted the comment
+  // We track comment IDs posted in this session, analogous to mySignalIds
+  var canDelete=myCommentIds.indexOf(cmt.id)!==-1;
   var delBtn=el.querySelector('.comment-delete-btn');
+  if(!canDelete){
+    // Hide the delete button entirely for comments not owned by this session
+    if(delBtn)delBtn.style.display='none';
+  }
+  if(delBtn){
   var delConfirm=false;
   delBtn.onclick=async function(e){
     e.stopPropagation();
     if(delConfirm){
-      await sb.from('comments').delete().eq('id',cmt.id);
-      el.parentNode&&el.parentNode.removeChild(el);
+      var r=await sb.from('comments').delete().eq('id',cmt.id);
+      if(!r.error){
+        el.parentNode&&el.parentNode.removeChild(el);
+        // Fix #4: Decrement signal comment counter on comment delete
+        var parentCard=document.querySelector('[data-signal-id="'+signalId+'"]');
+        var sig=signalsCache.find(function(s){return s.id===signalId;});
+        var cmtDec=await sb.rpc('increment_signal_comments',{p_id:signalId,p_delta:-1});
+        var newCmtCount;
+        if(cmtDec.error){
+          var dbSigDel=await sb.from('signals').select('comments').eq('id',signalId).single();
+          var realCmtsDel=(dbSigDel.error||dbSigDel.data.comments==null)?0:dbSigDel.data.comments;
+          newCmtCount=Math.max(0,realCmtsDel-1);
+          await sb.from('signals').update({comments:newCmtCount}).eq('id',signalId);
+        } else {
+          newCmtCount=cmtDec.data;
+        }
+        if(sig){sig.comments=newCmtCount;}
+        if(parentCard){parentCard.querySelector('.cmt-count').textContent=formatNum(newCmtCount);}
+      }
     }else{
       delConfirm=true;delBtn.textContent='sure?';delBtn.classList.add('confirm');
       setTimeout(function(){delConfirm=false;delBtn.textContent='delete';delBtn.classList.remove('confirm');},3000);
     }
   };
+  } // end if(delBtn) ownership guard
 
   // reply
   var replyBtn=el.querySelector('.comment-reply-btn');
@@ -1018,6 +1050,9 @@ function buildComment(cmt,depth,signalId){
           var res=await sb.from('comments').insert({signal_id:signalId,parent_id:cmt.id,text:t}).select().single();
           if(res.error){console.error(res.error);return;}
           replyCompose.classList.remove('open');replyCompose.innerHTML='';
+          // Fix #1: Track this reply as ours for session-owned deletion
+          myCommentIds.push(res.data.id);
+          try{sessionStorage.setItem('cf_mine_cmts',JSON.stringify(myCommentIds));}catch(e){}
           // F-08: Atomic comment count increment via RPC
           // SQL: CREATE OR REPLACE FUNCTION increment_signal_comments(p_id uuid, p_delta int)
           //   RETURNS int LANGUAGE sql SECURITY DEFINER AS $$
@@ -1192,9 +1227,10 @@ function makeCard(signal,index){
   // delete signal — only attached when button exists (own posts only)
   var delBtn=card.querySelector('[data-action="delete"]');
   if(delBtn){
+    var deleteConfirm=false; // Fix #5: scoped per-card, not global
     delBtn.onclick=async function(e){
       e.stopPropagation();
-      if(deleteConfirm[signal.id]){
+      if(deleteConfirm){
         var r=await sb.from('signals').delete().eq('id',signal.id);
         if(!r.error){
           card.style.transition='opacity 0.3s';
@@ -1209,10 +1245,10 @@ function makeCard(signal,index){
           },300);
         }
       }else{
-        deleteConfirm[signal.id]=true;
+        deleteConfirm=true;
         delBtn.classList.add('confirm');
         setTimeout(function(){
-          deleteConfirm[signal.id]=false;
+          deleteConfirm=false;
           delBtn.classList.remove('confirm');
         },3000);
       }
@@ -1250,11 +1286,7 @@ function makeCard(signal,index){
       setTimeout(function(){ct&&ct.remove();},2000);
     };
   });
-  // close report menu on outside click
-  document.addEventListener('click',function(){
-    reportMenu.classList.remove('open');
-    reportBtn.classList.remove('open');
-  },{capture:false});
+  // NOTE: outside-click closing is handled by a single delegated listener set up once (see bottom of script)
   card.onclick=function(e){
     // only trigger if click landed directly on card or post-text (not on action buttons / comment section)
     if(e.target.closest('.post-actions')||e.target.closest('.comments-section'))return;
@@ -1303,10 +1335,13 @@ function makeCard(signal,index){
 
   inp.oninput=function(){submitBtn.classList.toggle('active',inp.value.trim().length>0);};
 
+  var commentSubmitting=false; // Fix #9: prevent double-submit
   async function addComment(){
-    var t=inp.value.trim();if(!t)return;
+    var t=inp.value.trim();if(!t||commentSubmitting)return;
+    commentSubmitting=true;submitBtn.classList.remove('active');submitBtn.style.opacity='0.4';
     var res=await sb.from('comments').insert({signal_id:signal.id,parent_id:null,text:t}).select().single();
-    if(res.error){console.error(res.error);return;}
+    commentSubmitting=false;submitBtn.style.opacity='';
+    if(res.error){console.error(res.error);submitBtn.classList.toggle('active',inp.value.trim().length>0);return;}
     // F-08: Atomic comment count increment via RPC
     var cmtInc=await sb.rpc('increment_signal_comments',{p_id:signal.id,p_delta:1});
     var newCmts;
@@ -1322,6 +1357,9 @@ function makeCard(signal,index){
     signal.comments=newCmts;
     card.querySelector('.cmt-count').textContent=formatNum(newCmts);
     inp.value='';submitBtn.classList.remove('active');
+    // Fix #1: Track this comment as ours for session-owned deletion
+    myCommentIds.push(res.data.id);
+    try{sessionStorage.setItem('cf_mine_cmts',JSON.stringify(myCommentIds));}catch(e){}
     // remove empty state, add new comment
     thread.querySelectorAll('.no-comments').forEach(function(e){e.remove();});
     var nc=res.data;nc._liked=false;nc._replies=[];
@@ -1367,7 +1405,6 @@ textarea.oninput=function(){
   postBtn.disabled=!textarea.value.trim();
 };
 textarea.onkeydown=function(e){if(e.key==='Enter'&&e.metaKey)postBtn.click();};
-
 postBtn.onclick=async function(){
   var text=textarea.value.trim();if(!text)return;
   // F-07: Client-side char guard (server also enforces via RPC/CHECK constraint)
@@ -1452,6 +1489,15 @@ postBtn.onclick=async function(){
   }
   postBtn.disabled=false;
 };
+
+// Fix #7: Single delegated listener to close all report menus on outside click
+// Replaces the per-card document.addEventListener that leaked one handler per card render.
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.report-wrap')){
+    document.querySelectorAll('.report-menu.open').forEach(function(m){m.classList.remove('open');});
+    document.querySelectorAll('.report-btn.open').forEach(function(b){b.classList.remove('open');});
+  }
+});
 
 </script>
 </body>
