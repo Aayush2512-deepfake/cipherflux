@@ -687,12 +687,10 @@ function buildComment(cmt,depth,signalId){
   likeBtn.onclick=async function(e){
     e.stopPropagation();
     var liked=likeBtn.classList.contains('liked');
-    var newCount=(cmt.likes||0)+(liked?-1:1);
+    // Toggle UI immediately (optimistic)
     cmt._liked=!liked;
-    cmt.likes=newCount;
     likeBtn.classList.toggle('liked',cmt._liked);
     likeBtn.querySelector('svg').setAttribute('fill',cmt._liked?'currentColor':'none');
-    likeBtn.querySelector('span').textContent=newCount;
     // Persist liked state
     if(cmt._liked){
       if(likedCommentIds.indexOf(cmt.id)===-1){likedCommentIds.push(cmt.id);}
@@ -700,8 +698,14 @@ function buildComment(cmt,depth,signalId){
       likedCommentIds=likedCommentIds.filter(function(id){return id!==cmt.id;});
     }
     saveLikedComments();
-    // Save to DB atomically
-    await sb.rpc('increment_comment_likes', {row_id: cmt.id, delta: liked ? -1 : 1});
+    // Fetch real count from DB, compute new value, write it back
+    var dbCmt=await sb.from('comments').select('likes').eq('id',cmt.id).single();
+    var realCmtCount=(dbCmt.error||dbCmt.data.likes==null)?0:dbCmt.data.likes;
+    var newCmtCount=realCmtCount+(liked?-1:1);
+    if(newCmtCount<0)newCmtCount=0;
+    await sb.from('comments').update({likes:newCmtCount}).eq('id',cmt.id);
+    cmt.likes=newCmtCount;
+    likeBtn.querySelector('span').textContent=newCmtCount;
   };
 
   // delete comment
@@ -739,10 +743,15 @@ function buildComment(cmt,depth,signalId){
           var res=await sb.from('comments').insert({signal_id:signalId,parent_id:cmt.id,text:t}).select().single();
           if(res.error){console.error(res.error);return;}
           replyCompose.classList.remove('open');replyCompose.innerHTML='';
-          // increment parent signal comment count atomically
-          await sb.rpc('increment_comments', {row_id: signalId, delta: 1});
+          // Fetch real comment count for parent signal, increment, write back
           var parentCard=document.querySelector('[data-signal-id="'+signalId+'"]');
-          if(parentCard){var sig=signalsCache.find(function(s){return s.id===signalId;});if(sig){sig.comments=(sig.comments||0)+1;parentCard.querySelector('.cmt-count').textContent=formatNum(sig.comments);}}
+          var sig=signalsCache.find(function(s){return s.id===signalId;});
+          var dbSig2=await sb.from('signals').select('comments').eq('id',signalId).single();
+          var realCmts2=(dbSig2.error||dbSig2.data.comments==null)?0:dbSig2.data.comments;
+          var newCmts2=realCmts2+1;
+          await sb.from('signals').update({comments:newCmts2}).eq('id',signalId);
+          if(sig){sig.comments=newCmts2;}
+          if(parentCard){parentCard.querySelector('.cmt-count').textContent=formatNum(newCmts2);}
           var rep=el.querySelector('.comment-replies');
           var nc=res.data;nc._liked=false;
           rep.appendChild(buildComment(nc,depth+1,signalId));
@@ -822,13 +831,10 @@ function makeCard(signal,index){
   likeBtn.onclick=async function(e){
     e.stopPropagation();
     var liked=likeBtn.classList.contains('liked');
-    var newCount=(signal.likes||0)+(liked?-1:1);
-    // Optimistic UI update
+    // Toggle UI immediately (optimistic)
     signal._liked=!liked;
-    signal.likes=newCount;
     likeBtn.classList.toggle('liked',signal._liked);
     likeBtn.querySelector('svg').setAttribute('fill',signal._liked?'currentColor':'none');
-    likeBtn.querySelector('span').textContent=formatNum(signal.likes);
     // Persist liked state locally
     if(signal._liked){
       if(likedSignalIds.indexOf(signal.id)===-1){likedSignalIds.push(signal.id);}
@@ -836,8 +842,16 @@ function makeCard(signal,index){
       likedSignalIds=likedSignalIds.filter(function(id){return id!==signal.id;});
     }
     saveLikedSignals();
-    // Save to DB atomically
-    await sb.rpc('increment_likes', {row_id: signal.id, delta: liked ? -1 : 1});
+    // Fetch real count from DB, compute new value, write it back
+    var dbRow=await sb.from('signals').select('likes').eq('id',signal.id).single();
+    console.log('[like] fetched from DB:', dbRow.data, 'error:', dbRow.error);
+    var realCount=(dbRow.error||dbRow.data.likes==null)?0:dbRow.data.likes;
+    var newCount=realCount+(liked?-1:1);
+    if(newCount<0)newCount=0;
+    var upd=await sb.from('signals').update({likes:newCount}).eq('id',signal.id);
+    console.log('[like] update result:', upd.error);
+    signal.likes=newCount;
+    likeBtn.querySelector('span').textContent=formatNum(newCount);
   };
 
   // delete signal — only attached when button exists (own posts only)
@@ -923,10 +937,13 @@ function makeCard(signal,index){
     var t=inp.value.trim();if(!t)return;
     var res=await sb.from('comments').insert({signal_id:signal.id,parent_id:null,text:t}).select().single();
     if(res.error){console.error(res.error);return;}
-    // increment comment count atomically
-    await sb.rpc('increment_comments', {row_id: signal.id, delta: 1});
-    signal.comments=(signal.comments||0)+1;
-    card.querySelector('.cmt-count').textContent=formatNum(signal.comments);
+    // Fetch real comment count, increment, write back
+    var dbSig=await sb.from('signals').select('comments').eq('id',signal.id).single();
+    var realCmts=(dbSig.error||dbSig.data.comments==null)?0:dbSig.data.comments;
+    var newCmts=realCmts+1;
+    await sb.from('signals').update({comments:newCmts}).eq('id',signal.id);
+    signal.comments=newCmts;
+    card.querySelector('.cmt-count').textContent=formatNum(newCmts);
     inp.value='';submitBtn.classList.remove('active');
     // remove empty state, add new comment
     thread.querySelectorAll('.no-comments').forEach(function(e){e.remove();});
