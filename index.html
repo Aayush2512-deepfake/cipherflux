@@ -670,8 +670,12 @@ async function loadSignals(){
   if(activeTab==='deep')order='comments';
 
   // Fetch signals + DB-persisted likes for this device fingerprint in parallel
+  // Fetch signals with live counts from source tables (not stale counter columns)
   var results=await Promise.all([
-    sb.from('signals').select('*').order(order,{ascending:false}).limit(100),
+    sb.from('signals')
+      .select('*, signal_likes(count), comments(count)')
+      .order(order,{ascending:false})
+      .limit(100),
     sb.from('signal_likes').select('signal_id').eq('fingerprint',DEVICE_FP)
   ]);
   var res=results[0];var likesRes=results[1];
@@ -684,7 +688,17 @@ async function loadSignals(){
     likedSignalIds=likesRes.data.map(function(row){return row.signal_id;});
   }
 
-  signalsCache=res.data||[];
+  // Normalise: overwrite stale counter columns with live counts from joined tables
+  var rows=res.data||[];
+  rows.forEach(function(s){
+    s.likes=(s.signal_likes&&s.signal_likes[0])?parseInt(s.signal_likes[0].count)||0:0;
+    // 'comments' key from the join conflicts with the column name — Supabase returns
+    // the join under the foreign table name, so we alias it when reading
+    var cmtJoin=s['comments'];
+    s.comments=(cmtJoin&&cmtJoin[0])?parseInt(cmtJoin[0].count)||0:0;
+  });
+
+  signalsCache=rows;
   renderSignals();
 }
 
@@ -707,6 +721,9 @@ function subscribeRealtime(){
       if(activeTab==='stream'){
         // Skip if already optimistically added
         if(document.querySelector('[data-signal-id="'+payload.new.id+'"]'))return;
+        // Realtime payload has no joined counts — ensure they start at 0
+        payload.new.likes=payload.new.likes||0;
+        payload.new.comments=payload.new.comments||0;
         signalsCache.unshift(payload.new);
         document.getElementById('statCount').textContent=signalsCache.length;
         var feed=document.getElementById('feed');
@@ -1219,6 +1236,7 @@ postBtn.onclick=async function(){
   toast.classList.add('show');setTimeout(function(){toast.classList.remove('show');},3000);
   // Optimistically prepend card immediately — don't wait for realtime event
   var newSignal=res.data;
+  newSignal.likes=0;newSignal.comments=0; // fresh post always starts at zero
   if(!document.querySelector('[data-signal-id="'+newSignal.id+'"]')){
     signalsCache.unshift(newSignal);
     document.getElementById('statCount').textContent=signalsCache.length;
