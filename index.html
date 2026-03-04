@@ -817,11 +817,9 @@ async function loadSignals(){
   if(activeTab==='rising')order='likes';
   if(activeTab==='deep')order='comments';
 
-  // Fetch signals + DB-persisted likes for this device fingerprint in parallel
-  // Fetch signals with live counts from source tables (not stale counter columns)
   var results=await Promise.all([
     sb.from('signals')
-      .select('*, signal_likes(count), comments(count)')
+      .select('*, signal_likes(count), comments:comments(count)')
       .eq('mod_status','visible')
       .order(order,{ascending:false})
       .limit(100),
@@ -1117,7 +1115,7 @@ function makeCard(signal,index){
             '<button class="report-option" data-reason="harassment">harassment</button>'+
             '<button class="report-option" data-reason="spam">spam</button>'+
           '</div>'+
-        '</div>'
+        '</div>'+
       '</div>'+
     '</div>'+
     '<div class="comments-section" style="display:none">'+
