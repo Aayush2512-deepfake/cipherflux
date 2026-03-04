@@ -13,7 +13,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -472,6 +471,65 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(167,139,250,0.18);p
 </div>
 
 <script>
+// ══════════════════════════════════════════════════════════════════════════════
+// REQUIRED DATABASE MIGRATIONS (run in Supabase SQL Editor before deploying)
+// ══════════════════════════════════════════════════════════════════════════════
+// -- F-07: Server-side text length constraint (can't be bypassed via direct REST)
+// ALTER TABLE signals ADD CONSTRAINT signals_text_length CHECK (char_length(text) <= 5000);
+// ALTER TABLE comments ADD CONSTRAINT comments_text_length CHECK (char_length(text) <= 5000);
+//
+// -- F-05: Force created_at to NOW() regardless of client input
+// CREATE OR REPLACE FUNCTION force_created_at()
+//   RETURNS TRIGGER LANGUAGE plpgsql AS $$
+//   BEGIN NEW.created_at = NOW(); RETURN NEW; END; $$;
+// CREATE TRIGGER signals_force_created_at BEFORE INSERT ON signals
+//   FOR EACH ROW EXECUTE FUNCTION force_created_at();
+// CREATE TRIGGER comments_force_created_at BEFORE INSERT ON comments
+//   FOR EACH ROW EXECUTE FUNCTION force_created_at();
+//
+// -- F-01: Server-side rate limiting + F-05 + F-07 combined in one RPC
+// CREATE OR REPLACE FUNCTION emit_signal(p_fingerprint text, p_text text)
+//   RETURNS signals LANGUAGE plpgsql SECURITY DEFINER AS $$
+//   DECLARE v_last timestamptz; v_row signals;
+//   BEGIN
+//     IF char_length(p_text) > 5000 THEN RAISE EXCEPTION 'text_too_long'; END IF;
+//     SELECT MAX(created_at) INTO v_last FROM signals WHERE fingerprint = p_fingerprint;
+//     IF v_last IS NOT NULL AND NOW() - v_last < INTERVAL '30 seconds' THEN
+//       RAISE EXCEPTION 'rate_limited';
+//     END IF;
+//     INSERT INTO signals(fingerprint, text) VALUES(p_fingerprint, p_text)
+//       RETURNING * INTO v_row;
+//     RETURN v_row;
+//   END; $$;
+//
+// -- F-08: Atomic like/unlike counters (no read-modify-write race)
+// CREATE OR REPLACE FUNCTION increment_signal_likes(p_id uuid, p_delta int)
+//   RETURNS int LANGUAGE sql SECURITY DEFINER AS $$
+//     UPDATE signals SET likes = GREATEST(0, likes + p_delta) WHERE id = p_id
+//     RETURNING likes; $$;
+// CREATE OR REPLACE FUNCTION increment_comment_likes(p_id uuid, p_delta int)
+//   RETURNS int LANGUAGE sql SECURITY DEFINER AS $$
+//     UPDATE comments SET likes = GREATEST(0, likes + p_delta) WHERE id = p_id
+//     RETURNING likes; $$;
+// CREATE OR REPLACE FUNCTION increment_signal_comments(p_id uuid, p_delta int)
+//   RETURNS int LANGUAGE sql SECURITY DEFINER AS $$
+//     UPDATE signals SET comments = GREATEST(0, comments + p_delta) WHERE id = p_id
+//     RETURNING comments; $$;
+//
+// -- F-02: RLS UPDATE policies — restrict signals/comments updates to owner
+// -- (fingerprint column must exist on signals and comments tables)
+// CREATE POLICY signals_update_own ON signals FOR UPDATE
+//   USING (fingerprint = current_setting('request.headers')::json->>'x-device-fp')
+//   WITH CHECK (fingerprint = current_setting('request.headers')::json->>'x-device-fp');
+// -- Better: disallow UPDATE entirely from client; use only SECURITY DEFINER RPCs above.
+// REVOKE UPDATE ON signals FROM anon;
+// REVOKE UPDATE ON comments FROM anon;
+//
+// -- F-04: RLS DELETE policies — restrict signals delete to owner, disallow comment delete
+// CREATE POLICY signals_delete_own ON signals FOR DELETE
+//   USING (fingerprint = current_setting('request.headers')::json->>'x-device-fp');
+// -- Or safest: revoke DELETE entirely and use soft-delete (is_deleted flag) via RPC.
+// ══════════════════════════════════════════════════════════════════════════════
 // ══════════════════════════════════════
 // DEVICE FINGERPRINT (captured BEFORE privacy hardening overwrites values)
 // Used only for like-deduplication — never sent anywhere except as a hashed key
@@ -740,12 +798,23 @@ function buildComment(cmt,depth,signalId){
       likedCommentIds=likedCommentIds.filter(function(id){return id!==cmt.id;});
     }
     saveLikedComments();
-    // Fetch real count from DB, compute new value, write it back
-    var dbCmt=await sb.from('comments').select('likes').eq('id',cmt.id).single();
-    var realCmtCount=(dbCmt.error||dbCmt.data.likes==null)?0:dbCmt.data.likes;
-    var newCmtCount=realCmtCount+(liked?-1:1);
-    if(newCmtCount<0)newCmtCount=0;
-    await sb.from('comments').update({likes:newCmtCount}).eq('id',cmt.id);
+    // F-08: Atomic like increment via RPC to avoid race conditions.
+    // SQL: CREATE OR REPLACE FUNCTION increment_comment_likes(p_id uuid, p_delta int)
+    //   RETURNS int LANGUAGE sql SECURITY DEFINER AS $$
+    //     UPDATE comments SET likes = GREATEST(0, likes + p_delta) WHERE id = p_id
+    //     RETURNING likes; $$;
+    var cmtDelta=liked?-1:1;
+    var cmtAtomic=await sb.rpc('increment_comment_likes',{p_id:cmt.id,p_delta:cmtDelta});
+    var newCmtCount;
+    if(cmtAtomic.error){
+      console.warn('[increment_comment_likes] RPC not found, using fallback — deploy the RPC!');
+      var dbCmt=await sb.from('comments').select('likes').eq('id',cmt.id).single();
+      var realCmtCount=(dbCmt.error||dbCmt.data.likes==null)?0:dbCmt.data.likes;
+      newCmtCount=Math.max(0,realCmtCount+cmtDelta);
+      await sb.from('comments').update({likes:newCmtCount}).eq('id',cmt.id);
+    } else {
+      newCmtCount=cmtAtomic.data;
+    }
     cmt.likes=newCmtCount;
     likeBtn.querySelector('span').textContent=newCmtCount;
   };
@@ -785,13 +854,24 @@ function buildComment(cmt,depth,signalId){
           var res=await sb.from('comments').insert({signal_id:signalId,parent_id:cmt.id,text:t}).select().single();
           if(res.error){console.error(res.error);return;}
           replyCompose.classList.remove('open');replyCompose.innerHTML='';
-          // Fetch real comment count for parent signal, increment, write back
+          // F-08: Atomic comment count increment via RPC
+          // SQL: CREATE OR REPLACE FUNCTION increment_signal_comments(p_id uuid, p_delta int)
+          //   RETURNS int LANGUAGE sql SECURITY DEFINER AS $$
+          //     UPDATE signals SET comments = GREATEST(0, comments + p_delta) WHERE id = p_id
+          //     RETURNING comments; $$;
           var parentCard=document.querySelector('[data-signal-id="'+signalId+'"]');
           var sig=signalsCache.find(function(s){return s.id===signalId;});
-          var dbSig2=await sb.from('signals').select('comments').eq('id',signalId).single();
-          var realCmts2=(dbSig2.error||dbSig2.data.comments==null)?0:dbSig2.data.comments;
-          var newCmts2=realCmts2+1;
-          await sb.from('signals').update({comments:newCmts2}).eq('id',signalId);
+          var cmtInc2=await sb.rpc('increment_signal_comments',{p_id:signalId,p_delta:1});
+          var newCmts2;
+          if(cmtInc2.error){
+            console.warn('[increment_signal_comments] RPC not found, using fallback — deploy the RPC!');
+            var dbSig2=await sb.from('signals').select('comments').eq('id',signalId).single();
+            var realCmts2=(dbSig2.error||dbSig2.data.comments==null)?0:dbSig2.data.comments;
+            newCmts2=realCmts2+1;
+            await sb.from('signals').update({comments:newCmts2}).eq('id',signalId);
+          } else {
+            newCmts2=cmtInc2.data;
+          }
           if(sig){sig.comments=newCmts2;}
           if(parentCard){parentCard.querySelector('.cmt-count').textContent=formatNum(newCmts2);}
           var rep=el.querySelector('.comment-replies');
@@ -908,12 +988,24 @@ function makeCard(signal,index){
     }
     saveLikedSignals();
 
-    // Update like count in signals table
-    var dbRow=await sb.from('signals').select('likes').eq('id',signal.id).single();
-    var realCount=(dbRow.error||dbRow.data.likes==null)?0:dbRow.data.likes;
-    var newCount=realCount+(liked?-1:1);
-    if(newCount<0)newCount=0;
-    await sb.from('signals').update({likes:newCount}).eq('id',signal.id);
+    // F-08: Atomic like increment via RPC to avoid race conditions.
+    // SQL: CREATE OR REPLACE FUNCTION increment_signal_likes(p_id uuid, p_delta int)
+    //   RETURNS int LANGUAGE sql SECURITY DEFINER AS $$
+    //     UPDATE signals SET likes = GREATEST(0, likes + p_delta) WHERE id = p_id
+    //     RETURNING likes; $$;
+    var delta=liked?-1:1;
+    var atomicRes=await sb.rpc('increment_signal_likes',{p_id:signal.id,p_delta:delta});
+    var newCount;
+    if(atomicRes.error){
+      // RPC not deployed yet — fallback to read-modify-write (remove once RPC is live)
+      console.warn('[increment_signal_likes] RPC not found, using fallback — deploy the RPC!');
+      var dbRow=await sb.from('signals').select('likes').eq('id',signal.id).single();
+      var realCount=(dbRow.error||dbRow.data.likes==null)?0:dbRow.data.likes;
+      newCount=Math.max(0,realCount+delta);
+      await sb.from('signals').update({likes:newCount}).eq('id',signal.id);
+    } else {
+      newCount=atomicRes.data;
+    }
     signal.likes=newCount;
     likeBtn.querySelector('span').textContent=formatNum(newCount);
   };
@@ -1001,11 +1093,18 @@ function makeCard(signal,index){
     var t=inp.value.trim();if(!t)return;
     var res=await sb.from('comments').insert({signal_id:signal.id,parent_id:null,text:t}).select().single();
     if(res.error){console.error(res.error);return;}
-    // Fetch real comment count, increment, write back
-    var dbSig=await sb.from('signals').select('comments').eq('id',signal.id).single();
-    var realCmts=(dbSig.error||dbSig.data.comments==null)?0:dbSig.data.comments;
-    var newCmts=realCmts+1;
-    await sb.from('signals').update({comments:newCmts}).eq('id',signal.id);
+    // F-08: Atomic comment count increment via RPC
+    var cmtInc=await sb.rpc('increment_signal_comments',{p_id:signal.id,p_delta:1});
+    var newCmts;
+    if(cmtInc.error){
+      console.warn('[increment_signal_comments] RPC not found, using fallback — deploy the RPC!');
+      var dbSig=await sb.from('signals').select('comments').eq('id',signal.id).single();
+      var realCmts=(dbSig.error||dbSig.data.comments==null)?0:dbSig.data.comments;
+      newCmts=realCmts+1;
+      await sb.from('signals').update({comments:newCmts}).eq('id',signal.id);
+    } else {
+      newCmts=cmtInc.data;
+    }
     signal.comments=newCmts;
     card.querySelector('.cmt-count').textContent=formatNum(newCmts);
     inp.value='';submitBtn.classList.remove('active');
@@ -1057,6 +1156,13 @@ textarea.onkeydown=function(e){if(e.key==='Enter'&&e.metaKey)postBtn.click();};
 
 postBtn.onclick=async function(){
   var text=textarea.value.trim();if(!text)return;
+  // F-07: Client-side char guard (server also enforces via RPC/CHECK constraint)
+  if(text.length>CHAR_LIMIT){
+    charCountEl.textContent='signal too long';
+    charCountEl.className='char-count limit';
+    return;
+  }
+  // F-01: Client-side rate limit (server also enforces via emit_signal RPC)
   var now=Date.now();
   if(lastPostTime&&(now-lastPostTime)<RATE_LIMIT_MS){
     var wait=Math.ceil((RATE_LIMIT_MS-(now-lastPostTime))/1000);
@@ -1065,8 +1171,43 @@ postBtn.onclick=async function(){
     return;
   }
   postBtn.disabled=true;
-  var res=await sb.from('signals').insert({text:text}).select().single();
-  if(res.error){console.error(res.error);postBtn.disabled=false;return;}
+  // F-01 + F-05 + F-07: Route through RPC so the server can enforce rate
+  // limiting per fingerprint, strip any client-supplied created_at, and
+  // validate text length — none of which the client can bypass via direct REST.
+  // SQL: CREATE OR REPLACE FUNCTION emit_signal(p_fingerprint text, p_text text)
+  //   RETURNS signals LANGUAGE plpgsql SECURITY DEFINER AS $$
+  //   DECLARE v_last timestamptz; v_row signals;
+  //   BEGIN
+  //     IF char_length(p_text) > 5000 THEN RAISE EXCEPTION 'text_too_long'; END IF;
+  //     SELECT MAX(created_at) INTO v_last FROM signals WHERE fingerprint = p_fingerprint;
+  //     IF v_last IS NOT NULL AND NOW() - v_last < INTERVAL '30 seconds' THEN
+  //       RAISE EXCEPTION 'rate_limited';
+  //     END IF;
+  //     INSERT INTO signals(fingerprint, text) VALUES(p_fingerprint, p_text)
+  //       RETURNING * INTO v_row;
+  //     RETURN v_row;
+  //   END; $$;
+  var res=await sb.rpc('emit_signal',{p_fingerprint:DEVICE_FP,p_text:text});
+  // Graceful fallback if RPC not yet deployed (remove once RPC is live)
+  if(res.error&&(res.error.code==='PGRST202'||res.error.code==='42883')){
+    console.warn('[emit_signal] RPC not found, falling back to direct insert — deploy the RPC!');
+    res=await sb.from('signals').insert({text:text}).select().single();
+  }
+  // Surface server-enforced errors to the user
+  if(res.error){
+    var msg=res.error.message||'';
+    if(msg.includes('rate_limited')){
+      charCountEl.textContent='slow down — server rate limit hit';
+      charCountEl.className='char-count limit';
+    } else if(msg.includes('text_too_long')){
+      charCountEl.textContent='signal too long';
+      charCountEl.className='char-count limit';
+    } else {
+      console.error(res.error);
+    }
+    postBtn.disabled=false;
+    return;
+  }
   lastPostTime=Date.now();
   mySignalIds.push(res.data.id);
   try{sessionStorage.setItem('cf_mine',JSON.stringify(mySignalIds));}catch(e){}
