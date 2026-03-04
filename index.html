@@ -190,6 +190,13 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(167,139,250,0.18);p
 .comment-btn.active{border-color:rgba(167,139,250,0.45);color:#a78bfa;background:rgba(167,139,250,0.1)}
 .delete-btn:hover{border-color:rgba(244,114,182,0.3);color:#f472b6;background:rgba(244,114,182,0.05)}
 .delete-btn.confirm{border-color:rgba(244,114,182,0.5);color:#f472b6;background:rgba(244,114,182,0.1)}
+.report-btn:hover{border-color:rgba(251,146,60,0.4);color:#fb923c;background:rgba(251,146,60,0.06)}
+.report-btn.open{border-color:rgba(251,146,60,0.5);color:#fb923c;background:rgba(251,146,60,0.1)}
+.report-menu{display:none;position:absolute;right:0;bottom:calc(100% + 8px);background:rgba(7,6,15,0.98);border:1px solid rgba(167,139,250,0.22);border-radius:10px;padding:6px;z-index:50;min-width:180px;box-shadow:0 8px 32px rgba(0,0,0,0.6);backdrop-filter:blur(16px)}
+.report-menu.open{display:block}
+.report-option{display:block;width:100%;background:none;border:none;text-align:left;padding:8px 12px;color:rgba(255,255,255,0.6);font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;border-radius:6px;transition:all 0.15s}
+.report-option:hover{background:rgba(251,146,60,0.1);color:#fb923c}
+.report-confirm-toast{position:absolute;right:0;bottom:calc(100% + 8px);background:rgba(251,146,60,0.12);border:1px solid rgba(251,146,60,0.3);border-radius:8px;padding:8px 14px;font-size:10px;color:#fb923c;letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;pointer-events:none;z-index:50}
 .comments-section{margin-top:16px;padding-top:16px;border-top:1px solid rgba(167,139,250,0.18)}
 .comments-thread{display:flex;flex-direction:column}
 .comment-item{display:flex;flex-direction:column;position:relative}
@@ -529,6 +536,147 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(167,139,250,0.18);p
 // CREATE POLICY signals_delete_own ON signals FOR DELETE
 //   USING (fingerprint = current_setting('request.headers')::json->>'x-device-fp');
 // -- Or safest: revoke DELETE entirely and use soft-delete (is_deleted flag) via RPC.
+//
+// ── MODERATION LAYER (M-01 … M-07) ────────────────────────────────────────────
+// -- M-01: Add moderation columns
+// ALTER TABLE signals
+//   ADD COLUMN IF NOT EXISTS mod_status   TEXT    NOT NULL DEFAULT 'visible'
+//     CHECK (mod_status IN ('visible','flagged','hidden','removed')),
+//   ADD COLUMN IF NOT EXISTS risk_score   SMALLINT NOT NULL DEFAULT 0,
+//   ADD COLUMN IF NOT EXISTS risk_reasons TEXT[]   NOT NULL DEFAULT '{}',
+//   ADD COLUMN IF NOT EXISTS report_count SMALLINT NOT NULL DEFAULT 0;
+// ALTER TABLE comments
+//   ADD COLUMN IF NOT EXISTS mod_status   TEXT    NOT NULL DEFAULT 'visible'
+//     CHECK (mod_status IN ('visible','flagged','hidden','removed')),
+//   ADD COLUMN IF NOT EXISTS risk_score   SMALLINT NOT NULL DEFAULT 0,
+//   ADD COLUMN IF NOT EXISTS risk_reasons TEXT[]   NOT NULL DEFAULT '{}',
+//   ADD COLUMN IF NOT EXISTS report_count SMALLINT NOT NULL DEFAULT 0;
+// CREATE INDEX IF NOT EXISTS idx_signals_mod ON signals(mod_status, created_at DESC);
+//
+// -- M-02: Report queue table
+// CREATE TABLE IF NOT EXISTS content_reports (
+//   id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+//   target_type     TEXT        NOT NULL CHECK (target_type IN ('signal','comment')),
+//   target_id       UUID        NOT NULL,
+//   report_reason   TEXT        NOT NULL
+//     CHECK (report_reason IN ('illegal_content','csam','threat','doxxing',
+//                              'terror','hate_speech','harassment','spam','other')),
+//   reporter_fp_hash TEXT       NOT NULL,
+//   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+//   processed       BOOLEAN     NOT NULL DEFAULT FALSE
+// );
+// CREATE UNIQUE INDEX IF NOT EXISTS idx_reports_dedup
+//   ON content_reports(target_type, target_id, reporter_fp_hash);
+//
+// -- M-03: Moderation audit log
+// CREATE TABLE IF NOT EXISTS mod_audit_log (
+//   id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+//   action       TEXT        NOT NULL,
+//   target_type  TEXT        NOT NULL,
+//   target_id    UUID        NOT NULL,
+//   reason       TEXT,
+//   risk_score   SMALLINT,
+//   performed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+//   performed_by TEXT
+// );
+//
+// -- M-04: Risk scoring function
+// CREATE OR REPLACE FUNCTION compute_risk(p_text TEXT)
+// RETURNS TABLE(score SMALLINT, reasons TEXT[])
+// LANGUAGE plpgsql SECURITY DEFINER AS $$
+// DECLARE
+//   v_score   INT := 0;
+//   v_reasons TEXT[] := '{}';
+//   v_text    TEXT;
+// BEGIN
+//   v_text := lower(regexp_replace(p_text, '[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', 'g'));
+//   v_text := regexp_replace(v_text, '[1!|]', 'i', 'g');
+//   v_text := regexp_replace(v_text, '[3]',   'e', 'g');
+//   v_text := regexp_replace(v_text, '[0]',   'o', 'g');
+//   v_text := regexp_replace(v_text, '[4@]',  'a', 'g');
+//   IF v_text ~ '(csam|child.*porn|loli.*sex|shota.*sex)' THEN
+//     v_score := v_score + 70; v_reasons := v_reasons || 'csam_keyword'; END IF;
+//   IF v_text ~ '(i will kill|going to kill|going to bomb|suicide vest)' THEN
+//     v_score := v_score + 70; v_reasons := v_reasons || 'explicit_threat'; END IF;
+//   IF v_text ~ '(isis|islamic state|al.?qaeda).{0,40}(recruit|join|pledge|fight)' THEN
+//     v_score := v_score + 70; v_reasons := v_reasons || 'terror_recruit'; END IF;
+//   IF v_text ~ '[0-9]{4}[[:space:]][0-9]{4}[[:space:]][0-9]{4}|[0-9]{12}' THEN
+//     v_score := v_score + 50; v_reasons := v_reasons || 'aadhaar_pattern'; END IF;
+//   IF v_text ~ '(\+91|0)[[:space:]-]?[6-9][0-9]{9}|[6-9][0-9]{9}' THEN
+//     v_score := v_score + 50; v_reasons := v_reasons || 'phone_number'; END IF;
+//   IF v_text ~ '[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}' THEN
+//     v_score := v_score + 30; v_reasons := v_reasons || 'email_address'; END IF;
+//   IF v_text ~ '(flat|house|plot|door).*[0-9].*(road|street|nagar|colony|sector)' THEN
+//     v_score := v_score + 30; v_reasons := v_reasons || 'address_pattern'; END IF;
+//   IF v_text ~ '(kill (yourself|urself|him|her|them))' THEN
+//     v_score := v_score + 20; v_reasons := v_reasons || 'self_harm'; END IF;
+//   RETURN QUERY SELECT LEAST(v_score, 100)::SMALLINT, v_reasons;
+// END; $$;
+//
+// -- M-05: Modified emit_signal with risk scoring
+// CREATE OR REPLACE FUNCTION emit_signal(p_fingerprint text, p_text text)
+//   RETURNS signals LANGUAGE plpgsql SECURITY DEFINER AS $$
+//   DECLARE
+//     v_last      timestamptz;
+//     v_row       signals;
+//     v_score     SMALLINT;
+//     v_reasons   TEXT[];
+//   BEGIN
+//     IF char_length(p_text) > 5000 THEN RAISE EXCEPTION 'text_too_long'; END IF;
+//     SELECT MAX(created_at) INTO v_last FROM signals WHERE fingerprint = p_fingerprint;
+//     IF v_last IS NOT NULL AND NOW() - v_last < INTERVAL '30 seconds' THEN
+//       RAISE EXCEPTION 'rate_limited';
+//     END IF;
+//     SELECT r.score, r.reasons INTO v_score, v_reasons FROM compute_risk(p_text) r;
+//     IF v_score >= 90 THEN
+//       INSERT INTO mod_audit_log(action,target_type,target_id,reason,risk_score,performed_by)
+//         VALUES('auto_remove','signal',gen_random_uuid(),array_to_string(v_reasons,','),v_score,'system');
+//       RAISE EXCEPTION 'content_rejected';
+//     END IF;
+//     INSERT INTO signals(fingerprint, text, mod_status, risk_score, risk_reasons)
+//       VALUES(p_fingerprint, p_text,
+//              CASE WHEN v_score >= 40 THEN 'flagged' ELSE 'visible' END,
+//              v_score, v_reasons)
+//       RETURNING * INTO v_row;
+//     IF v_score >= 40 THEN
+//       INSERT INTO mod_audit_log(action,target_type,target_id,reason,risk_score,performed_by)
+//         VALUES('auto_flag','signal',v_row.id,array_to_string(v_reasons,','),v_score,'system');
+//     END IF;
+//     RETURN v_row;
+//   END; $$;
+//
+// -- M-06: Anonymous report RPC
+// CREATE OR REPLACE FUNCTION submit_report(
+//   p_target_type TEXT, p_target_id UUID, p_reason TEXT, p_reporter_fp TEXT
+// ) RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
+// DECLARE
+//   v_fp_hash TEXT;
+//   v_count   SMALLINT;
+// BEGIN
+//   v_fp_hash := encode(digest(p_reporter_fp,'sha256'),'hex');
+//   SELECT COUNT(*) INTO v_count FROM content_reports
+//     WHERE reporter_fp_hash = v_fp_hash AND created_at > NOW() - INTERVAL '1 hour';
+//   IF v_count >= 10 THEN RAISE EXCEPTION 'report_rate_limited'; END IF;
+//   INSERT INTO content_reports(target_type,target_id,report_reason,reporter_fp_hash)
+//     VALUES(p_target_type,p_target_id,p_reason,v_fp_hash)
+//     ON CONFLICT DO NOTHING;
+//   IF p_target_type = 'signal' THEN
+//     UPDATE signals SET report_count = report_count + 1,
+//       mod_status = CASE WHEN report_count + 1 >= 5 AND mod_status = 'visible'
+//                         THEN 'flagged' ELSE mod_status END
+//       WHERE id = p_target_id;
+//   ELSE
+//     UPDATE comments SET report_count = report_count + 1,
+//       mod_status = CASE WHEN report_count + 1 >= 5 AND mod_status = 'visible'
+//                         THEN 'flagged' ELSE mod_status END
+//       WHERE id = p_target_id;
+//   END IF;
+//   INSERT INTO mod_audit_log(action,target_type,target_id,reason,performed_by)
+//     VALUES('report_received',p_target_type,p_target_id,p_reason,'system');
+//   RETURN jsonb_build_object('ok',true);
+// END; $$;
+//
+// -- M-07: Feed queries — add WHERE mod_status = 'visible' to all public signal/comment selects
 // ══════════════════════════════════════════════════════════════════════════════
 // ══════════════════════════════════════
 // DEVICE FINGERPRINT (captured BEFORE privacy hardening overwrites values)
@@ -674,6 +822,7 @@ async function loadSignals(){
   var results=await Promise.all([
     sb.from('signals')
       .select('*, signal_likes(count), comments(count)')
+      .eq('mod_status','visible')
       .order(order,{ascending:false})
       .limit(100),
     sb.from('signal_likes').select('signal_id').eq('fingerprint',DEVICE_FP)
@@ -717,7 +866,7 @@ var realtimeChannel=null;
 function subscribeRealtime(){
   if(realtimeChannel)return;
   realtimeChannel=sb.channel('public:signals')
-    .on('postgres_changes',{event:'INSERT',schema:'public',table:'signals'},function(payload){
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'signals',filter:'mod_status=eq.visible'},function(payload){
       if(activeTab==='stream'){
         // Skip if already optimistically added
         if(document.querySelector('[data-signal-id="'+payload.new.id+'"]'))return;
@@ -954,6 +1103,21 @@ function makeCard(signal,index){
         (mySignalIds.indexOf(signal.id)!==-1?
         '<button class="action-btn delete-btn" data-action="delete"><svg width="14" height="14" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3.5h9M5 3.5V2.5h3v1M10.5 3.5l-.5 7a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1l-.5-7"/></svg></button>'
         :'')+
+        '<div class="report-wrap" style="position:relative">'+
+          '<button class="action-btn report-btn" data-action="report" title="report content">'+
+            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>'+
+          '</button>'+
+          '<div class="report-menu" id="rm-'+signal.id+'">'+
+            '<button class="report-option" data-reason="illegal_content">illegal content</button>'+
+            '<button class="report-option" data-reason="csam">csam / child safety</button>'+
+            '<button class="report-option" data-reason="threat">explicit threat</button>'+
+            '<button class="report-option" data-reason="doxxing">doxxing / pii</button>'+
+            '<button class="report-option" data-reason="terror">terror / extremism</button>'+
+            '<button class="report-option" data-reason="hate_speech">hate speech</button>'+
+            '<button class="report-option" data-reason="harassment">harassment</button>'+
+            '<button class="report-option" data-reason="spam">spam</button>'+
+          '</div>'+
+        '</div>'
       '</div>'+
     '</div>'+
     '<div class="comments-section" style="display:none">'+
@@ -1057,7 +1221,42 @@ function makeCard(signal,index){
     };
   }
 
-  // card click — toggle comments (clicking anywhere on card opens/closes)
+  // report signal
+  var reportBtn=card.querySelector('[data-action="report"]');
+  var reportMenu=card.querySelector('#rm-'+signal.id);
+  reportBtn.onclick=function(e){
+    e.stopPropagation();
+    // close all other open menus
+    document.querySelectorAll('.report-menu.open').forEach(function(m){if(m!==reportMenu)m.classList.remove('open');});
+    document.querySelectorAll('.report-btn.open').forEach(function(b){if(b!==reportBtn)b.classList.remove('open');});
+    var isOpen=reportMenu.classList.toggle('open');
+    reportBtn.classList.toggle('open',isOpen);
+  };
+  reportMenu.querySelectorAll('.report-option').forEach(function(opt){
+    opt.onclick=async function(e){
+      e.stopPropagation();
+      var reason=opt.getAttribute('data-reason');
+      reportMenu.classList.remove('open');
+      reportBtn.classList.remove('open');
+      var res=await sb.rpc('submit_report',{
+        p_target_type:'signal',
+        p_target_id:signal.id,
+        p_reason:reason,
+        p_reporter_fp:DEVICE_FP
+      });
+      // Show brief confirmation regardless of RPC existence
+      var ct=document.createElement('div');
+      ct.className='report-confirm-toast';
+      ct.textContent=res.error?'already reported':'reported';
+      reportBtn.parentNode.appendChild(ct);
+      setTimeout(function(){ct&&ct.remove();},2000);
+    };
+  });
+  // close report menu on outside click
+  document.addEventListener('click',function(){
+    reportMenu.classList.remove('open');
+    reportBtn.classList.remove('open');
+  },{capture:false});
   card.onclick=function(e){
     // only trigger if click landed directly on card or post-text (not on action buttons / comment section)
     if(e.target.closest('.post-actions')||e.target.closest('.comments-section'))return;
@@ -1079,7 +1278,7 @@ function makeCard(signal,index){
     cmtSection.style.display='block';
     cmtBtn.classList.add('active');
     thread.innerHTML='<div class="no-comments">loading responses...</div>';
-    var res=await sb.from('comments').select('*').eq('signal_id',signal.id).order('created_at',{ascending:true});
+    var res=await sb.from('comments').select('*').eq('signal_id',signal.id).eq('mod_status','visible').order('created_at',{ascending:true});
     thread.innerHTML='';
     if(res.error||!res.data||!res.data.length){
       var em=document.createElement('p');em.className='no-comments';em.textContent='no responses yet. be the first.';
@@ -1219,6 +1418,9 @@ postBtn.onclick=async function(){
     } else if(msg.includes('text_too_long')){
       charCountEl.textContent='signal too long';
       charCountEl.className='char-count limit';
+    } else if(msg.includes('content_rejected')){
+      charCountEl.textContent='signal blocked — violates content policy';
+      charCountEl.className='char-count limit';
     } else {
       console.error(res.error);
     }
@@ -1234,19 +1436,21 @@ postBtn.onclick=async function(){
   activeTab='stream';
   document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab==='stream');});
   toast.classList.add('show');setTimeout(function(){toast.classList.remove('show');},3000);
-  // Optimistically prepend card immediately — don't wait for realtime event
+  // Only prepend if not auto-flagged by server
   var newSignal=res.data;
-  newSignal.likes=0;newSignal.comments=0; // fresh post always starts at zero
-  if(!document.querySelector('[data-signal-id="'+newSignal.id+'"]')){
-    signalsCache.unshift(newSignal);
-    document.getElementById('statCount').textContent=signalsCache.length;
-    var feed=document.getElementById('feed');
-    document.getElementById('emptyState').style.display='none';
-    var newCard=makeCard(newSignal,0);
-    newCard.style.animationDelay='0ms';
-    var firstCard=feed.querySelector('.post-card');
-    if(firstCard){feed.insertBefore(newCard,firstCard);}else{feed.appendChild(newCard);}
-    window.scrollTo({top:0,behavior:'smooth'});
+  if(newSignal.mod_status==='visible'){
+    newSignal.likes=0;newSignal.comments=0;
+    if(!document.querySelector('[data-signal-id="'+newSignal.id+'"]')){
+      signalsCache.unshift(newSignal);
+      document.getElementById('statCount').textContent=signalsCache.length;
+      var feed=document.getElementById('feed');
+      document.getElementById('emptyState').style.display='none';
+      var newCard=makeCard(newSignal,0);
+      newCard.style.animationDelay='0ms';
+      var firstCard=feed.querySelector('.post-card');
+      if(firstCard){feed.insertBefore(newCard,firstCard);}else{feed.appendChild(newCard);}
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
   }
   postBtn.disabled=false;
 };
