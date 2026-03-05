@@ -347,6 +347,79 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(167,139,250,0.18);p
   .disclosure-grid{grid-template-columns:1fr}
   .disclosure-card{border-radius:12px!important}
 }
+
+/* ── ADMIN PANEL ─────────────────────────────────────────────────────── */
+#admin{display:none;min-height:100vh;background:var(--void);padding:0}
+#admin.visible{display:block}
+.admin-header{background:linear-gradient(135deg,rgba(11,9,23,0.98),rgba(7,6,15,0.99));border-bottom:1px solid rgba(167,139,250,0.20);padding:0 40px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.admin-logo{font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:3px;text-transform:uppercase;background:var(--g1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.admin-logo span{color:rgba(255,255,255,0.35);-webkit-text-fill-color:rgba(255,255,255,0.35)}
+.admin-header-right{display:flex;align-items:center;gap:16px}
+.admin-badge{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;background:rgba(244,114,182,0.12);border:1px solid rgba(244,114,182,0.30);color:#f472b6;padding:4px 10px;border-radius:6px}
+.admin-exit{background:none;border:1px solid rgba(255,255,255,0.12);border-radius:7px;color:rgba(255,255,255,0.5);font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:6px 14px;cursor:pointer;transition:all 0.2s}
+.admin-exit:hover{border-color:rgba(167,139,250,0.4);color:var(--text)}
+.admin-body{max-width:1100px;margin:0 auto;padding:48px 40px}
+.admin-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin-bottom:40px}
+.admin-stat{background:linear-gradient(145deg,rgba(11,9,23,0.8),rgba(7,6,15,0.9));border:1px solid rgba(255,255,255,0.07);padding:24px 20px}
+.admin-stat:first-child{border-radius:12px 0 0 12px}
+.admin-stat:last-child{border-radius:0 12px 12px 0}
+.admin-stat-num{font-family:'IBM Plex Mono',monospace;font-size:28px;font-weight:700;background:var(--g1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:4px}
+.admin-stat-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.admin-tabs{display:flex;gap:2px;margin-bottom:24px}
+.admin-tab{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);padding:10px 20px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:all 0.2s;border-radius:0}
+.admin-tab:first-child{border-radius:8px 0 0 8px}
+.admin-tab:last-child{border-radius:0 8px 8px 0}
+.admin-tab.active{background:rgba(167,139,250,0.10);border-color:rgba(167,139,250,0.30);color:var(--a)}
+.admin-tab .tab-count{margin-left:8px;background:rgba(244,114,182,0.15);color:#f472b6;border-radius:10px;padding:1px 7px;font-size:10px}
+.admin-queue{display:flex;flex-direction:column;gap:12px}
+.admin-card{background:linear-gradient(145deg,rgba(11,9,23,0.85),rgba(7,6,15,0.92));border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:24px 28px;transition:border-color 0.2s}
+.admin-card:hover{border-color:rgba(167,139,250,0.22)}
+.admin-card-meta{display:flex;gap:16px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.admin-type-pill{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:3px 8px;border-radius:5px;border:1px solid}
+.admin-type-pill.signal{color:#a78bfa;border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.08)}
+.admin-type-pill.comment{color:#60a5fa;border-color:rgba(96,165,250,0.3);background:rgba(96,165,250,0.08)}
+.admin-risk{font-family:'IBM Plex Mono',monospace;font-size:11px;padding:3px 10px;border-radius:5px}
+.admin-risk.low{color:#34d399;background:rgba(52,211,153,0.10);border:1px solid rgba(52,211,153,0.25)}
+.admin-risk.med{color:#fbbf24;background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.25)}
+.admin-risk.high{color:#f472b6;background:rgba(244,114,182,0.10);border:1px solid rgba(244,114,182,0.25)}
+.admin-reports{font-size:11px;letter-spacing:1px;color:var(--muted);font-family:'IBM Plex Mono',monospace}
+.admin-reports span{color:#f472b6}
+.admin-time{font-size:11px;color:var(--subtle);font-family:'IBM Plex Mono',monospace;margin-left:auto}
+.admin-text{font-family:'Space Grotesk',sans-serif;font-size:15px;color:var(--text);line-height:1.7;margin-bottom:16px;padding:16px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
+.admin-reasons{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.admin-reason-tag{font-size:10px;letter-spacing:1px;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;color:#fbbf24;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.20);padding:3px 8px;border-radius:4px}
+.admin-actions{display:flex;gap:10px}
+.admin-btn{border:none;border-radius:8px;padding:9px 20px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all 0.2s;font-weight:600}
+.admin-btn.approve{background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.30)}
+.admin-btn.approve:hover{background:rgba(52,211,153,0.22);border-color:rgba(52,211,153,0.5)}
+.admin-btn.remove{background:rgba(244,114,182,0.10);color:#f472b6;border:1px solid rgba(244,114,182,0.28)}
+.admin-btn.remove:hover{background:rgba(244,114,182,0.20);border-color:rgba(244,114,182,0.5)}
+.admin-btn.hide{background:rgba(251,191,36,0.08);color:#fbbf24;border:1px solid rgba(251,191,36,0.25)}
+.admin-btn.hide:hover{background:rgba(251,191,36,0.18)}
+.admin-btn:disabled{opacity:0.35;cursor:not-allowed}
+.admin-empty{text-align:center;padding:80px 20px;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:2px}
+.admin-empty-icon{font-size:32px;margin-bottom:16px}
+.admin-loading{text-align:center;padding:60px;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:3px}
+/* Auth gate */
+.admin-gate{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--void)}
+.admin-gate-box{background:linear-gradient(145deg,rgba(11,9,23,0.95),rgba(7,6,15,0.98));border:1px solid rgba(167,139,250,0.20);border-radius:20px;padding:48px 40px;width:100%;max-width:400px;text-align:center}
+.admin-gate-title{font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:4px;text-transform:uppercase;background:var(--g1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
+.admin-gate-sub{font-size:12px;color:var(--muted);margin-bottom:32px;letter-spacing:1px}
+.admin-gate-input{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(167,139,250,0.18);border-radius:10px;padding:14px 18px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:14px;outline:none;transition:all 0.25s;box-sizing:border-box;letter-spacing:3px;text-align:center}
+.admin-gate-input:focus{border-color:rgba(167,139,250,0.40);background:rgba(167,139,250,0.06);box-shadow:0 0 0 3px rgba(167,139,250,0.08)}
+.admin-gate-btn{width:100%;margin-top:16px;background:var(--g1);border:none;border-radius:10px;padding:14px;color:white;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;transition:opacity 0.2s}
+.admin-gate-btn:hover{opacity:0.85}
+.admin-gate-err{margin-top:12px;font-size:11px;color:#f472b6;letter-spacing:1px;min-height:18px}
+@media(max-width:700px){
+  .admin-body{padding:32px 16px}
+  .admin-stats{grid-template-columns:1fr 1fr}
+  .admin-stat:first-child{border-radius:12px 0 0 0}
+  .admin-stat:nth-child(2){border-radius:0 12px 0 0}
+  .admin-stat:nth-child(3){border-radius:0 0 0 12px}
+  .admin-stat:last-child{border-radius:0 0 12px 0}
+  .admin-header{padding:0 16px}
+}
+
 </style>
 </head>
 <body>
@@ -534,6 +607,61 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(167,139,250,0.18);p
 </div>
 
 <script>
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MOD DASHBOARD — run this SQL in Supabase before using the mod panel
+// ══════════════════════════════════════════════════════════════════════════════
+// Step 1: Store your admin key as a hashed secret
+// Run once in SQL editor (replace 'YOUR_ADMIN_KEY' with your actual key):
+//
+// INSERT INTO vault.secrets (name, secret)
+//   VALUES ('mod_admin_key', encode(digest('YOUR_ADMIN_KEY','sha256'),'hex'))
+//   ON CONFLICT (name) DO UPDATE SET secret = EXCLUDED.secret;
+//
+// Step 2: Create the mod_action RPC
+//
+// CREATE OR REPLACE FUNCTION mod_action(
+//   p_admin_key  text,
+//   p_target_type text,  -- 'signal' | 'comment'
+//   p_target_id  uuid,
+//   p_action     text    -- 'approve' | 'hide' | 'remove' | 'ping'
+// ) RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
+// DECLARE
+//   v_stored_hash text;
+//   v_input_hash  text;
+//   v_new_status  text;
+// BEGIN
+//   -- Verify admin key
+//   SELECT secret INTO v_stored_hash FROM vault.secrets WHERE name = 'mod_admin_key';
+//   v_input_hash := encode(digest(p_admin_key,'sha256'),'hex');
+//   IF v_stored_hash IS NULL OR v_input_hash != v_stored_hash THEN
+//     RAISE EXCEPTION 'invalid_admin_key';
+//   END IF;
+//
+//   -- Ping just tests the key
+//   IF p_action = 'ping' THEN RETURN; END IF;
+//
+//   -- Map action to status
+//   v_new_status := CASE p_action
+//     WHEN 'approve' THEN 'visible'
+//     WHEN 'hide'    THEN 'hidden'
+//     WHEN 'remove'  THEN 'removed'
+//     ELSE RAISE EXCEPTION 'invalid_action'
+//   END;
+//
+//   -- Apply to correct table
+//   IF p_target_type = 'signal' THEN
+//     UPDATE signals SET mod_status = v_new_status WHERE id = p_target_id;
+//   ELSIF p_target_type = 'comment' THEN
+//     UPDATE comments SET mod_status = v_new_status WHERE id = p_target_id;
+//   ELSE
+//     RAISE EXCEPTION 'invalid_target_type';
+//   END IF;
+// END; $$;
+//
+// GRANT EXECUTE ON FUNCTION mod_action TO anon;
+// ══════════════════════════════════════════════════════════════════════════════
+
 // ══════════════════════════════════════════════════════════════════════════════
 // REQUIRED DATABASE MIGRATIONS (run in Supabase SQL Editor before deploying)
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1480,6 +1608,243 @@ document.addEventListener('click',function(e){
   }
 });
 
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ADMIN MOD PANEL
+// ══════════════════════════════════════════════════════════════════════════════
+var ADMIN_SESSION=false;
+var ADMIN_KEY_HASH=null;
+var adminCurrentTab='signals';
+var adminFlaggedSignals=[];
+var adminFlaggedComments=[];
+
+// Trigger: type the word "cipher" then press shift+M anywhere on landing
+(function(){
+  var buf='';
+  document.addEventListener('keydown',function(e){
+    if(document.getElementById('admin').classList.contains('visible'))return;
+    buf=(buf+e.key).slice(-6);
+    if(buf.toLowerCase()==='cipher'&&e.shiftKey&&e.key==='M'){
+      buf='';
+      openAdminPanel();
+    }
+    // Also support URL hash #mod
+  });
+  window.addEventListener('hashchange',function(){
+    if(window.location.hash==='#mod')openAdminPanel();
+  });
+  if(window.location.hash==='#mod')setTimeout(openAdminPanel,300);
+})();
+
+function openAdminPanel(){
+  document.getElementById('landing').classList.add('hidden');
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('admin').classList.add('visible');
+  document.getElementById('adminGate').style.display='flex';
+  document.getElementById('adminDash').style.display='none';
+  setTimeout(function(){document.getElementById('adminKeyInput').focus();},100);
+}
+
+function exitAdmin(){
+  document.getElementById('admin').classList.remove('visible');
+  document.getElementById('landing').classList.remove('hidden');
+  ADMIN_SESSION=false;
+  ADMIN_KEY_HASH=null;
+  document.getElementById('adminKeyInput').value='';
+  window.location.hash='';
+  window.scrollTo(0,0);
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  var inp=document.getElementById('adminKeyInput');
+  if(inp){
+    inp.addEventListener('keydown',function(e){
+      if(e.key==='Enter')adminLogin();
+    });
+  }
+});
+
+async function adminLogin(){
+  var key=document.getElementById('adminKeyInput').value.trim();
+  var errEl=document.getElementById('adminGateErr');
+  errEl.textContent='';
+  if(!key){errEl.textContent='enter your admin key';return;}
+  // Test the key by calling mod_action with a test ping
+  var r=await sb.rpc('mod_action',{p_admin_key:key,p_target_type:'signal',p_target_id:'00000000-0000-0000-0000-000000000000',p_action:'ping'});
+  if(r.error&&r.error.message&&r.error.message.includes('invalid_admin_key')){
+    errEl.textContent='invalid key';
+    document.getElementById('adminKeyInput').value='';
+    return;
+  }
+  // Any other error (like record not found for ping) means key was accepted
+  ADMIN_SESSION=true;
+  ADMIN_KEY_HASH=key;
+  document.getElementById('adminGate').style.display='none';
+  document.getElementById('adminDash').style.display='block';
+  loadAdminData();
+}
+
+async function loadAdminData(){
+  // Load stats
+  var [sRes,cRes,tRes]=await Promise.all([
+    sb.from('signals').select('mod_status',{count:'exact',head:true}).eq('mod_status','flagged'),
+    sb.from('signals').select('mod_status',{count:'exact',head:true}).eq('mod_status','hidden'),
+    sb.from('signals').select('mod_status',{count:'exact',head:true}).eq('mod_status','removed'),
+    sb.from('signals').select('mod_status',{count:'exact',head:true})
+  ]);
+  document.getElementById('aStatFlagged').textContent=sRes.count||0;
+  document.getElementById('aStatHidden').textContent=cRes.count||0;
+  document.getElementById('aStatRemoved').textContent=tRes.count||0;
+
+  var tAll=await sb.from('signals').select('id',{count:'exact',head:true});
+  document.getElementById('aStatTotal').textContent=tAll.count||0;
+
+  // Load flagged signals
+  var sigRes=await sb.from('signals')
+    .select('id,text,mod_status,risk_score,risk_reasons,report_count,created_at')
+    .in('mod_status',['flagged','hidden'])
+    .order('created_at',{ascending:false})
+    .limit(100);
+  adminFlaggedSignals=sigRes.data||[];
+
+  // Load flagged comments
+  var comRes=await sb.from('comments')
+    .select('id,text,mod_status,risk_score,risk_reasons,report_count,created_at,signal_id')
+    .in('mod_status',['flagged','hidden'])
+    .order('created_at',{ascending:false})
+    .limit(100);
+  adminFlaggedComments=comRes.data||[];
+
+  document.getElementById('tcSignals').textContent=adminFlaggedSignals.length;
+  document.getElementById('tcComments').textContent=adminFlaggedComments.length;
+  renderAdminQueue();
+}
+
+function switchAdminTab(tab){
+  adminCurrentTab=tab;
+  document.getElementById('tabSignals').classList.toggle('active',tab==='signals');
+  document.getElementById('tabComments').classList.toggle('active',tab==='comments');
+  renderAdminQueue();
+}
+
+function renderAdminQueue(){
+  var queue=document.getElementById('adminQueue');
+  var items=adminCurrentTab==='signals'?adminFlaggedSignals:adminFlaggedComments;
+  if(!items.length){
+    queue.innerHTML='<div class="admin-empty"><div class="admin-empty-icon">✓</div>queue is clear</div>';
+    return;
+  }
+  queue.innerHTML='';
+  items.forEach(function(item){
+    var score=item.risk_score||0;
+    var riskClass=score>=70?'high':score>=40?'med':'low';
+    var riskLabel='risk: '+score;
+    var reasons=(item.risk_reasons||[]).map(function(r){
+      return '<span class="admin-reason-tag">'+r+'</span>';
+    }).join('');
+    var age=timeAgo(item.created_at);
+    var card=document.createElement('div');
+    card.className='admin-card';
+    card.id='acard-'+item.id;
+    card.innerHTML=
+      '<div class="admin-card-meta">'+
+        '<span class="admin-type-pill '+(adminCurrentTab==='signals'?'signal':'comment')+'">'+(adminCurrentTab==='signals'?'signal':'comment')+'</span>'+
+        '<span class="admin-risk '+riskClass+'">'+riskLabel+'</span>'+
+        (item.report_count?'<span class="admin-reports"><span>'+item.report_count+'</span> reports</span>':'')+
+        '<span class="admin-time">'+age+'</span>'+
+      '</div>'+
+      '<div class="admin-text">'+escHtml(item.text)+'</div>'+
+      (reasons?'<div class="admin-reasons">'+reasons+'</div>':'')+
+      '<div class="admin-actions">'+
+        '<button class="admin-btn approve" data-id="'+item.id+'" data-action="approve" data-tab="'+adminCurrentTab+'">approve</button>'+
+        '<button class="admin-btn hide" data-id="'+item.id+'" data-action="hide" data-tab="'+adminCurrentTab+'">hide</button>'+
+        '<button class="admin-btn remove" data-id="'+item.id+'" data-action="remove" data-tab="'+adminCurrentTab+'">remove</button>'+
+      '</div>';
+    // attach click handlers after setting innerHTML
+    var btnsEl=card.querySelectorAll('.admin-btn');
+    btnsEl.forEach(function(b){
+      b.addEventListener('click',function(){modAct(b.dataset.id,b.dataset.action,b.dataset.tab,b);});
+    });
+    queue.appendChild(card);
+  });
+}
+
+async function modAct(id,action,type,btn){
+  var card=document.getElementById('acard-'+id);
+  var btns=card.querySelectorAll('.admin-btn');
+  btns.forEach(function(b){b.disabled=true;});
+  btn.textContent='...';
+  var r=await sb.rpc('mod_action',{p_admin_key:ADMIN_KEY_HASH,p_target_type:type==='signals'?'signal':'comment',p_target_id:id,p_action:action});
+  if(r.error){
+    btns.forEach(function(b){b.disabled=false;});
+    btn.textContent=action;
+    showToast('error: '+r.error.message);
+    return;
+  }
+  if(type==='signals'){
+    adminFlaggedSignals=adminFlaggedSignals.filter(function(s){return s.id!==id;});
+    document.getElementById('tcSignals').textContent=adminFlaggedSignals.length;
+  } else {
+    adminFlaggedComments=adminFlaggedComments.filter(function(c){return c.id!==id;});
+    document.getElementById('tcComments').textContent=adminFlaggedComments.length;
+  }
+  card.style.transition='opacity 0.3s';
+  card.style.opacity='0';
+  setTimeout(function(){renderAdminQueue();},300);
+}
+
+function escHtml(s){
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function timeAgo(ts){
+  var d=Math.floor((Date.now()-new Date(ts))/1000);
+  if(d<60)return d+'s ago';
+  if(d<3600)return Math.floor(d/60)+'m ago';
+  if(d<86400)return Math.floor(d/3600)+'h ago';
+  return Math.floor(d/86400)+'d ago';
+}
+
 </script>
+
+<!-- ADMIN PANEL -->
+<div id="admin">
+  <!-- Auth gate -->
+  <div id="adminGate" class="admin-gate">
+    <div class="admin-gate-box">
+      <div class="admin-gate-title">CipherFlux</div>
+      <div class="admin-gate-sub">mod access · restricted</div>
+      <input type="password" id="adminKeyInput" class="admin-gate-input" placeholder="········" autocomplete="off"/>
+      <button class="admin-gate-btn" onclick="adminLogin()">enter</button>
+      <div class="admin-gate-err" id="adminGateErr"></div>
+    </div>
+  </div>
+  <!-- Dashboard -->
+  <div id="adminDash" style="display:none">
+    <div class="admin-header">
+      <div class="admin-logo">CipherFlux <span>//</span> mod</div>
+      <div class="admin-header-right">
+        <div class="admin-badge">restricted</div>
+        <button class="admin-exit" onclick="exitAdmin()">← exit</button>
+      </div>
+    </div>
+    <div class="admin-body">
+      <div class="admin-stats">
+        <div class="admin-stat"><div class="admin-stat-num" id="aStatFlagged">—</div><div class="admin-stat-label">flagged</div></div>
+        <div class="admin-stat"><div class="admin-stat-num" id="aStatHidden">—</div><div class="admin-stat-label">hidden</div></div>
+        <div class="admin-stat"><div class="admin-stat-num" id="aStatRemoved">—</div><div class="admin-stat-label">removed</div></div>
+        <div class="admin-stat"><div class="admin-stat-num" id="aStatTotal">—</div><div class="admin-stat-label">total signals</div></div>
+      </div>
+      <div class="admin-tabs">
+        <div class="admin-tab active" onclick="switchAdminTab('signals')" id="tabSignals">signals <span class="tab-count" id="tcSignals">0</span></div>
+        <div class="admin-tab" onclick="switchAdminTab('comments')" id="tabComments">comments <span class="tab-count" id="tcComments">0</span></div>
+      </div>
+      <div class="admin-queue" id="adminQueue">
+        <div class="admin-loading">loading queue...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
