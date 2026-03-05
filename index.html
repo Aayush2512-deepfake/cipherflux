@@ -320,6 +320,33 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(167,139,250,0.18);p
   .post-text{font-size:14px}
   .section-title{font-size:28px}
 }
+
+/* PRIVACY DISCLOSURE SECTION */
+.privacy-section{position:relative;z-index:1}
+.privacy-inner{max-width:1100px;margin:0 auto;padding:120px 60px}
+.disclosure-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin-top:64px}
+.disclosure-card{background:linear-gradient(145deg,rgba(11,9,23,0.8),rgba(7,6,15,0.9));border:1px solid rgba(255,255,255,0.08);padding:36px 28px;transition:all 0.3s;position:relative;overflow:hidden}
+.disclosure-card:first-child{border-radius:16px 0 0 16px}
+.disclosure-card:last-child{border-radius:0 16px 16px 0}
+.disclosure-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:var(--g1);opacity:0;transition:opacity 0.3s}
+.disclosure-card:hover{border-color:rgba(167,139,250,0.35);transform:translateY(-3px);z-index:2;box-shadow:0 8px 40px rgba(167,139,250,0.08)}
+.disclosure-card:hover::before{opacity:1}
+.dc-icon{font-size:22px;margin-bottom:18px}
+.dc-title{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:var(--text);margin-bottom:10px}
+.dc-desc{font-family:'Space Grotesk',sans-serif;font-size:13px;color:var(--muted);line-height:1.75}
+.dc-desc strong{color:var(--text)}
+@media(max-width:900px){
+  .privacy-inner{padding:64px 20px}
+  .disclosure-grid{grid-template-columns:1fr 1fr;gap:2px}
+  .disclosure-card:first-child{border-radius:16px 0 0 0}
+  .disclosure-card:nth-child(2){border-radius:0 16px 0 0}
+  .disclosure-card:nth-child(3){border-radius:0 0 0 16px}
+  .disclosure-card:last-child{border-radius:0 0 16px 0}
+}
+@media(max-width:480px){
+  .disclosure-grid{grid-template-columns:1fr}
+  .disclosure-card{border-radius:12px!important}
+}
 </style>
 </head>
 <body>
@@ -336,6 +363,7 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(167,139,250,0.18);p
     <span class="nav-link" onclick="scrollToSection('#features')">features</span>
     <span class="nav-link" onclick="scrollToSection('#philosophy')">philosophy</span>
     <span class="nav-link" onclick="scrollToSection('#security')">security</span>
+    <span class="nav-link" onclick="scrollToSection('#privacy')">disclosure</span>
   </div>
   <button class="nav-cta" onclick="enterStream()">enter the stream</button>
 </nav>
@@ -420,6 +448,33 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(167,139,250,0.18);p
   </div>
 </div></section>
 <div class="divider"></div>
+<section class="privacy-section" id="privacy"><div class="privacy-inner">
+  <span class="section-tag reveal">disclosure</span>
+  <h2 class="section-title reveal">No account. No identity.<br/><span class="g2">Nothing to hand over.</span></h2>
+  <div class="disclosure-grid">
+    <div class="disclosure-card reveal">
+      <div class="dc-icon">📭</div>
+      <div class="dc-title">What we store</div>
+      <div class="dc-desc">Your words. A timestamp. That is the complete list.</div>
+    </div>
+    <div class="disclosure-card reveal">
+      <div class="dc-icon">⚖️</div>
+      <div class="dc-title">Legal requests</div>
+      <div class="dc-desc">We cannot produce what we do not have. No names, no emails, no IPs linked to signals. This is architecture, not policy.</div>
+    </div>
+    <div class="disclosure-card reveal">
+      <div class="dc-icon">🌀</div>
+      <div class="dc-title">Session ends, you vanish</div>
+      <div class="dc-desc">Close the tab. No history, no footprint, no record that you were here.</div>
+    </div>
+    <div class="disclosure-card reveal">
+      <div class="dc-icon">🔐</div>
+      <div class="dc-title">For full anonymity</div>
+      <div class="dc-desc">Use <strong>Tor Browser</strong> or a trusted <strong>VPN</strong> to hide your IP at the network layer. Neither required — both recommended.</div>
+    </div>
+  </div>
+</div></section>
+<div class="divider"></div>
 <section class="cta-section"><div class="cta-glow"></div><div class="cta-inner">
   <h2 class="cta-title reveal">Ready to <span class="cta-g">disappear</span>?</h2>
   <p class="cta-sub reveal">No signup. No loading screen. Just open the stream and speak.</p>
@@ -433,6 +488,7 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(167,139,250,0.18);p
     <span class="footer-link" onclick="scrollToSection('#features')">features</span>
     <span class="footer-link" onclick="scrollToSection('#philosophy')">philosophy</span>
     <span class="footer-link" onclick="scrollToSection('#security')">security</span>
+    <span class="footer-link" onclick="scrollToSection('#privacy')">disclosure</span>
   </div>
   <div class="footer-copy">anonymous &middot; in perpetual motion</div>
 </footer>
