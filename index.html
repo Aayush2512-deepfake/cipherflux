@@ -726,7 +726,7 @@ var DEVICE_FP=(function(){
   var _now=performance.now.bind(performance);
   performance.now=function(){return Math.floor(_now()/100)*100+Math.random()*100;};
   var _fetch=window.fetch;
-  window.fetch=function(url,opts){opts=opts||{};opts.credentials='omit';opts.referrerPolicy='no-referrer';return _fetch(url,opts);};
+  window.fetch=function(url,opts){opts=opts||{};opts.referrerPolicy='no-referrer';if(typeof url==='string'&&url.indexOf('supabase.co')===-1){opts.credentials='omit';}return _fetch(url,opts);};
   // No localStorage used — nothing to wipe
   function wipe(){}
   window.addEventListener('beforeunload',wipe);window.addEventListener('pagehide',wipe);
