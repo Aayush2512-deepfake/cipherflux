@@ -178,7 +178,7 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(167,139,250,0.18);p
 .post-card:hover{border-color:rgba(167,139,250,0.45);transform:translateY(-3px);box-shadow:0 4px 32px rgba(167,139,250,0.08),inset 0 1px 0 rgba(255,255,255,0.04)}
 .post-glow{position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(167,139,250,0.5),rgba(244,114,182,0.4),rgba(56,189,248,0.3),transparent);opacity:0;transition:opacity 0.4s}
 .post-card:hover .post-glow{opacity:1}
-.post-text{font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:400;line-height:1.72;color:var(--text);margin-bottom:20px;white-space:pre-wrap;word-break:break-word}
+.post-text{font-family:'Space Grotesk',sans-serif;font-size:16.5px;font-weight:400;line-height:1.72;color:var(--text);margin-bottom:20px;white-space:pre-wrap;word-break:break-word}
 .post-meta{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
 .post-time{font-size:11px;color:var(--muted);letter-spacing:0.5px}
 .post-actions{display:flex;gap:6px}
@@ -201,8 +201,8 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(167,139,250,0.18);p
 .comment-row{display:flex;gap:10px;padding:8px 0;align-items:flex-start}
 .comment-avatar{width:26px;height:26px;border-radius:50%;flex-shrink:0;background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.20);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(255,255,255,0.5)}
 .comment-body{flex:1;min-width:0;padding-top:2px}
-.comment-text{font-size:13px;color:var(--text);line-height:1.65;word-break:break-word;font-family:'Space Grotesk',sans-serif}
-.comment-actions-row{display:flex;gap:14px;margin-top:4px;align-items:center}
+.comment-text{font-size:16px;color:var(--text);line-height:1.7;word-break:break-word;font-family:'Space Grotesk',sans-serif}
+.comment-actions-row{display:flex;gap:10px;margin-top:6px;align-items:center;flex-wrap:wrap}
 .comment-like-btn{background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.4);font-size:11px;font-family:'IBM Plex Mono',monospace;letter-spacing:1px;display:flex;align-items:center;gap:5px;padding:0;transition:color 0.2s}
 .comment-like-btn:hover,.comment-like-btn.liked{color:#f472b6}
 .comment-reply-btn{background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.4);font-size:11px;font-family:'IBM Plex Mono',monospace;letter-spacing:1px;padding:0;transition:color 0.2s}
@@ -216,7 +216,7 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(167,139,250,0.18);p
 .no-comments{font-size:11px;color:var(--muted);letter-spacing:2px;padding:12px 0 4px;font-style:italic;text-align:center}
 .comment-input-bar{display:flex;flex-direction:column;gap:8px;padding:12px 0 2px;border-top:1px solid rgba(167,139,250,0.18);margin-top:10px}
 .comment-input-avatar{width:26px;height:26px;border-radius:50%;flex-shrink:0;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;font-size:8px;color:rgba(255,255,255,0.2);font-weight:700;text-transform:uppercase}.comment-input-top{display:flex;gap:10px;align-items:flex-start}.comment-input-actions{display:flex;justify-content:flex-end;padding-right:2px}
-.comment-input{flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(167,139,250,0.12);border-radius:12px;padding:10px 14px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:13px;outline:none;transition:all 0.25s;max-height:120px;overflow-y:auto;resize:none;line-height:1.5;width:100%}
+.comment-input{flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(167,139,250,0.12);border-radius:12px;padding:10px 14px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:16px;outline:none;transition:all 0.25s;max-height:120px;overflow-y:auto;resize:none;line-height:1.5;width:100%}
 .comment-input:focus{border-color:rgba(167,139,250,0.35);background:rgba(167,139,250,0.05);box-shadow:0 0 0 3px rgba(167,139,250,0.05)}
 .comment-input::placeholder{color:var(--muted)}
 .comment-submit{background:none;border:none;cursor:pointer;color:var(--a);padding:4px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0;opacity:0.35}
@@ -292,7 +292,9 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(167,139,250,0.18);p
   .feed{padding:16px 12px 120px}
   /* Post card */
   .post-card{padding:18px 16px;border-radius:12px}
-  .post-text{font-size:15px;margin-bottom:14px}
+  .post-text{font-size:15.5px;margin-bottom:14px}
+  .comment-text{font-size:15.5px}
+  .comment-input{font-size:15.5px}
   .post-time{font-size:10px}
   .action-btn{padding:6px 10px;font-size:11px;gap:5px}
   /* Comments */
@@ -314,7 +316,9 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(167,139,250,0.18);p
   .back-btn{padding:5px 10px;font-size:11px}
   .refresh-btn{width:32px;height:32px}
   .post-card{padding:14px 12px}
-  .post-text{font-size:14px}
+  .post-text{font-size:14.5px}
+  .comment-text{font-size:14.5px}
+  .comment-input{font-size:14.5px}
   .section-title{font-size:28px}
 }
 
@@ -1158,6 +1162,7 @@ function buildComment(cmt,depth,signalId){
       '<div class="comment-body">'+
         '<div class="comment-text">'+escHtml(cmt.text)+'</div>'+
         '<div class="comment-actions-row">'+
+          '<span class="post-time">'+(cmt.created_at?formatTime(cmt.created_at):'')+'</span>'+
           '<button class="comment-like-btn'+(cmt._liked?' liked':'')+'">'+
             '<svg width="12" height="12" viewBox="0 0 24 24" fill="'+(cmt._liked?'currentColor':'none')+'" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'+
             '<span>'+(cmt.likes||0)+'</span>'+
