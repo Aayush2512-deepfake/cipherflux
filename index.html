@@ -213,18 +213,18 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(167,139,250,0.18);p
 .comment-delete-btn:hover,.comment-delete-btn.confirm{color:#f472b6}
 .comment-thread-line{position:absolute;left:12px;top:40px;bottom:8px;width:1px;background:linear-gradient(to bottom,rgba(167,139,250,0.40),transparent)}
 .comment-replies{margin-left:36px}
-.reply-compose{display:none;margin:2px 0 6px 36px}
-.reply-compose.open{display:flex;gap:8px;align-items:center;animation:fadeUp 0.18s ease forwards}
+.reply-compose{display:none;margin:2px 0 6px 36px;flex-direction:column;gap:6px}
+.reply-compose.open{display:flex;animation:fadeUp 0.18s ease forwards}.reply-compose-top{display:flex;gap:8px;align-items:flex-start}.reply-compose-actions{display:flex;justify-content:flex-end}
 .no-comments{font-size:11px;color:var(--muted);letter-spacing:2px;padding:12px 0 4px;font-style:italic;text-align:center}
-.comment-input-bar{display:flex;gap:10px;align-items:center;padding:12px 0 2px;border-top:1px solid rgba(167,139,250,0.18);margin-top:10px}
-.comment-input-avatar{width:26px;height:26px;border-radius:50%;flex-shrink:0;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;font-size:8px;color:rgba(255,255,255,0.2);font-weight:700;text-transform:uppercase}
-.comment-input{flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(167,139,250,0.12);border-radius:20px;padding:8px 16px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:13px;outline:none;transition:all 0.25s}
+.comment-input-bar{display:flex;flex-direction:column;gap:8px;padding:12px 0 2px;border-top:1px solid rgba(167,139,250,0.18);margin-top:10px}
+.comment-input-avatar{width:26px;height:26px;border-radius:50%;flex-shrink:0;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;font-size:8px;color:rgba(255,255,255,0.2);font-weight:700;text-transform:uppercase}.comment-input-top{display:flex;gap:10px;align-items:flex-start}.comment-input-actions{display:flex;justify-content:flex-end;padding-right:2px}
+.comment-input{flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(167,139,250,0.12);border-radius:12px;padding:10px 14px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:13px;outline:none;transition:all 0.25s;max-height:120px;overflow-y:auto;resize:none;line-height:1.5;width:100%}
 .comment-input:focus{border-color:rgba(167,139,250,0.35);background:rgba(167,139,250,0.05);box-shadow:0 0 0 3px rgba(167,139,250,0.05)}
 .comment-input::placeholder{color:var(--muted)}
 .comment-submit{background:none;border:none;cursor:pointer;color:var(--a);padding:4px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0;opacity:0.35}
 .comment-submit.active{opacity:1}
 .comment-submit:hover{transform:scale(1.15)}
-.reply-input{flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(167,139,250,0.12);border-radius:20px;padding:6px 14px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:12px;outline:none;transition:all 0.25s}
+.reply-input{flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(167,139,250,0.12);border-radius:12px;padding:8px 12px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:12px;outline:none;transition:all 0.25s;resize:none;max-height:100px;overflow-y:auto;line-height:1.5}
 .reply-input:focus{border-color:rgba(167,139,250,0.35);background:rgba(167,139,250,0.05)}
 .reply-input::placeholder{color:var(--muted)}
 .reply-submit{background:none;border:none;cursor:pointer;color:var(--a);padding:3px;opacity:0.35;display:flex;align-items:center;transition:all 0.2s;flex-shrink:0}
@@ -1187,8 +1187,9 @@ function buildComment(cmt,depth,signalId){
         el.parentNode&&el.parentNode.removeChild(el);
         var parentCard=document.querySelector('[data-signal-id="'+signalId+'"]');
         var sig=signalsCache.find(function(s){return s.id===signalId;});
-        var cmtDec=await sb.rpc('increment_signal_comments',{p_id:signalId,p_delta:-1});
-        var newCmtCount=cmtDec.error?Math.max(0,(sig?sig.comments:1)-1):cmtDec.data;
+        // Query live count from source table — avoids stale denorm column going to 0
+        var liveRes=await sb.from('comments').select('id',{count:'exact',head:true}).eq('signal_id',signalId);
+        var newCmtCount=(liveRes.error||liveRes.count==null)?Math.max(0,(sig?sig.comments:1)-1):liveRes.count;
         if(sig){sig.comments=newCmtCount;}
         if(parentCard){parentCard.querySelector('.cmt-count').textContent=formatNum(newCmtCount);}
       }
@@ -1203,42 +1204,57 @@ function buildComment(cmt,depth,signalId){
   var replyBtn=el.querySelector('.comment-reply-btn');
   var replyCompose=el.querySelector('.reply-compose');
   if(replyBtn&&replyCompose){
+    var replySubmitting=false;
     replyBtn.onclick=function(e){
       e.stopPropagation();
-      var open=!replyCompose.classList.contains('open');
-      replyCompose.classList.toggle('open',open);
-      if(open){
-        replyCompose.innerHTML=
-          '<div class="comment-avatar" style="width:22px;height:22px;font-size:7px">anon</div>'+
-          '<input class="reply-input" placeholder="reply..." maxlength="5000"/>'+
-          '<button class="reply-submit"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>';
-        var ri=replyCompose.querySelector('.reply-input');
-        var rs=replyCompose.querySelector('.reply-submit');
-        ri.oninput=function(){rs.classList.toggle('active',ri.value.trim().length>0);};
-        async function doReply(){
-          var t=ri.value.trim();if(!t)return;
-          var res=await sb.rpc('emit_comment',{p_fingerprint:DEVICE_FP,p_signal_id:signalId,p_text:t,p_parent_id:cmt.id});
-          if(res.error){console.error(res.error);return;}
-          replyCompose.classList.remove('open');replyCompose.innerHTML='';
-          myCommentIds.push(res.data.id);
-          try{sessionStorage.setItem('cf_mine_cmts',JSON.stringify(myCommentIds));}catch(e){}
-          var parentCard=document.querySelector('[data-signal-id="'+signalId+'"]');
-          var sig=signalsCache.find(function(s){return s.id===signalId;});
-          var cmtInc2=await sb.rpc('increment_signal_comments',{p_id:signalId,p_delta:1});
-          var newCmts2=cmtInc2.error?((sig?sig.comments:0)+1):cmtInc2.data;
-          if(sig){sig.comments=newCmts2;}
-          if(parentCard){parentCard.querySelector('.cmt-count').textContent=formatNum(newCmts2);}
-          var rep=el.querySelector('.comment-replies');
-          var nc=res.data;nc._liked=false;
-          rep.appendChild(buildComment(nc,depth+1,signalId));
-          if(!el.querySelector('.comment-thread-line')){
-            var ln=document.createElement('div');ln.className='comment-thread-line';el.appendChild(ln);
-          }
-        }
-        rs.onclick=function(e){e.stopPropagation();doReply();};
-        ri.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();doReply();}};
-        setTimeout(function(){ri.focus();},50);
+      var isOpen=replyCompose.classList.contains('open');
+      if(isOpen){
+        // Close and reset
+        replyCompose.classList.remove('open');
+        replyCompose.innerHTML='';
+        replySubmitting=false;
+        return;
       }
+      // Open — build stacked compose UI
+      replyCompose.classList.add('open');
+      replyCompose.innerHTML=
+        '<div class="reply-compose-top">'+
+          '<div class="comment-avatar" style="width:22px;height:22px;font-size:7px;flex-shrink:0">anon</div>'+
+          '<textarea class="reply-input" placeholder="reply..." maxlength="5000" rows="2"></textarea>'+
+        '</div>'+
+        '<div class="reply-compose-actions">'+
+          '<button class="reply-submit"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>'+
+        '</div>';
+      var ri=replyCompose.querySelector('.reply-input');
+      var rs=replyCompose.querySelector('.reply-submit');
+      ri.oninput=function(){rs.classList.toggle('active',ri.value.trim().length>0);};
+      async function doReply(){
+        var t=ri.value.trim();if(!t||replySubmitting)return;
+        replySubmitting=true;rs.style.opacity='0.4';
+        var res=await sb.rpc('emit_comment',{p_fingerprint:DEVICE_FP,p_signal_id:signalId,p_text:t,p_parent_id:cmt.id});
+        replySubmitting=false;rs.style.opacity='';
+        if(res.error){console.error(res.error);return;}
+        // Close and reset compose — ready for next reply immediately
+        replyCompose.classList.remove('open');
+        replyCompose.innerHTML='';
+        myCommentIds.push(res.data.id);
+        try{sessionStorage.setItem('cf_mine_cmts',JSON.stringify(myCommentIds));}catch(e){}
+        var parentCard=document.querySelector('[data-signal-id="'+signalId+'"]');
+        var sig=signalsCache.find(function(s){return s.id===signalId;});
+        var cmtInc2=await sb.rpc('increment_signal_comments',{p_id:signalId,p_delta:1});
+        var newCmts2=cmtInc2.error?((sig?sig.comments:0)+1):cmtInc2.data;
+        if(sig){sig.comments=newCmts2;}
+        if(parentCard){parentCard.querySelector('.cmt-count').textContent=formatNum(newCmts2);}
+        var rep=el.querySelector('.comment-replies');
+        var nc=res.data;nc._liked=false;
+        rep.appendChild(buildComment(nc,depth+1,signalId));
+        if(!el.querySelector('.comment-thread-line')){
+          var ln=document.createElement('div');ln.className='comment-thread-line';el.appendChild(ln);
+        }
+      }
+      rs.onclick=function(e){e.stopPropagation();doReply();};
+      ri.onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();doReply();}};
+      setTimeout(function(){ri.focus();},50);
     };
   }
 
@@ -1311,9 +1327,13 @@ function makeCard(signal,index){
     '<div class="comments-section" style="display:none">'+
       '<div class="comments-thread"></div>'+
       '<div class="comment-input-bar">'+
-        '<div class="comment-input-avatar">anon</div>'+
-        '<input class="comment-input" placeholder="add a response..." maxlength="5000"/>'+
-        '<button class="comment-submit"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>'+
+        '<div class="comment-input-top">'+
+          '<div class="comment-input-avatar">anon</div>'+
+          '<textarea class="comment-input" placeholder="add a response..." maxlength="5000" rows="2"></textarea>'+
+        '</div>'+
+        '<div class="comment-input-actions">'+
+          '<button class="comment-submit"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>'+
+        '</div>'+
       '</div>'+
     '</div>';
 
@@ -1475,7 +1495,7 @@ function makeCard(signal,index){
     thread.lastElementChild.scrollIntoView({behavior:'smooth',block:'nearest'});
   }
   submitBtn.onclick=function(e){e.stopPropagation();addComment();};
-  inp.onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();addComment();}};
+  inp.onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();addComment();}};
   inp.onclick=function(e){e.stopPropagation();};
   return card;
 }
