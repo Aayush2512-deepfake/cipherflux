@@ -325,6 +325,31 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(167,139,250,0.18);p
 .privacy-section{position:relative;z-index:1}
 .privacy-inner{max-width:1100px;margin:0 auto;padding:120px 60px}
 .disclosure-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin-top:64px}
+/* ── Thread panel ── */
+.thread-panel{display:none;position:fixed;inset:0;z-index:200;background:var(--void);overflow-y:auto;animation:slideInRight 0.28s cubic-bezier(0.16,1,0.3,1)}
+.thread-panel.open{display:block}
+@keyframes slideInRight{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
+.thread-panel-header{position:sticky;top:0;z-index:10;background:rgba(3,2,10,0.92);backdrop-filter:blur(24px);border-bottom:1px solid rgba(167,139,250,0.18);padding:0 48px;height:60px;display:flex;align-items:center;gap:16px}
+.thread-back-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;display:flex;align-items:center;gap:8px;transition:color 0.2s;padding:0}
+.thread-back-btn:hover{color:var(--text)}
+.thread-panel-title{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(167,139,250,0.5)}
+.thread-panel-body{max-width:760px;margin:0 auto;padding:32px 48px 120px}
+.thread-signal-card{background:linear-gradient(145deg,rgba(11,9,23,0.95),rgba(7,6,15,0.98));border:1px solid rgba(167,139,250,0.22);border-radius:16px;padding:28px 32px;margin-bottom:28px}
+.thread-signal-text{font-family:'Space Grotesk',sans-serif;font-size:17px;line-height:1.75;color:var(--text);margin-bottom:18px;white-space:pre-wrap;word-break:break-word}
+.thread-signal-meta{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.thread-comments-wrap{margin-top:4px}
+.thread-comments-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+/* ── Collapsed replies toggle ── */
+.replies-toggle{background:none;border:none;cursor:pointer;color:var(--a);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;padding:4px 0 4px 0;display:flex;align-items:center;gap:6px;opacity:0.7;transition:opacity 0.2s;margin-top:4px}
+.replies-toggle:hover{opacity:1}
+.replies-toggle svg{transition:transform 0.2s}
+.replies-toggle.expanded svg{transform:rotate(90deg)}
+.comment-replies{display:none}
+.comment-replies.open{display:block}
+@media(max-width:600px){
+  .thread-panel-header{padding:0 16px}
+  .thread-panel-body{padding:20px 16px 100px}
+}
 .disclosure-card{background:linear-gradient(145deg,rgba(11,9,23,0.8),rgba(7,6,15,0.9));border:1px solid rgba(255,255,255,0.08);padding:36px 28px;transition:all 0.3s;position:relative;overflow:hidden}
 .disclosure-card:first-child{border-radius:16px 0 0 16px}
 .disclosure-card:last-child{border-radius:0 16px 16px 0}
@@ -345,7 +370,32 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(167,139,250,0.18);p
 }
 @media(max-width:480px){
   .disclosure-grid{grid-template-columns:1fr}
-  .disclosure-card{border-radius:12px!important}
+  /* ── Thread panel ── */
+.thread-panel{display:none;position:fixed;inset:0;z-index:200;background:var(--void);overflow-y:auto;animation:slideInRight 0.28s cubic-bezier(0.16,1,0.3,1)}
+.thread-panel.open{display:block}
+@keyframes slideInRight{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
+.thread-panel-header{position:sticky;top:0;z-index:10;background:rgba(3,2,10,0.92);backdrop-filter:blur(24px);border-bottom:1px solid rgba(167,139,250,0.18);padding:0 48px;height:60px;display:flex;align-items:center;gap:16px}
+.thread-back-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;display:flex;align-items:center;gap:8px;transition:color 0.2s;padding:0}
+.thread-back-btn:hover{color:var(--text)}
+.thread-panel-title{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(167,139,250,0.5)}
+.thread-panel-body{max-width:760px;margin:0 auto;padding:32px 48px 120px}
+.thread-signal-card{background:linear-gradient(145deg,rgba(11,9,23,0.95),rgba(7,6,15,0.98));border:1px solid rgba(167,139,250,0.22);border-radius:16px;padding:28px 32px;margin-bottom:28px}
+.thread-signal-text{font-family:'Space Grotesk',sans-serif;font-size:17px;line-height:1.75;color:var(--text);margin-bottom:18px;white-space:pre-wrap;word-break:break-word}
+.thread-signal-meta{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.thread-comments-wrap{margin-top:4px}
+.thread-comments-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+/* ── Collapsed replies toggle ── */
+.replies-toggle{background:none;border:none;cursor:pointer;color:var(--a);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;padding:4px 0 4px 0;display:flex;align-items:center;gap:6px;opacity:0.7;transition:opacity 0.2s;margin-top:4px}
+.replies-toggle:hover{opacity:1}
+.replies-toggle svg{transition:transform 0.2s}
+.replies-toggle.expanded svg{transform:rotate(90deg)}
+.comment-replies{display:none}
+.comment-replies.open{display:block}
+@media(max-width:600px){
+  .thread-panel-header{padding:0 16px}
+  .thread-panel-body{padding:20px 16px 100px}
+}
+.disclosure-card{border-radius:12px!important}
 }
 
 /* ── ADMIN PANEL ─────────────────────────────────────────────────────── */
@@ -603,6 +653,17 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(167,139,250,0.18);p
     </div>
   </div>
   <div class="toast" id="toast">signal released</div>
+</div>
+<!-- ── Thread view panel ── -->
+<div class="thread-panel" id="threadPanel">
+  <div class="thread-panel-header">
+    <button class="thread-back-btn" id="threadBackBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      back
+    </button>
+    <span class="thread-panel-title">thread</span>
+  </div>
+  <div class="thread-panel-body" id="threadPanelBody"></div>
 </div>
 </div>
 
@@ -1248,6 +1309,25 @@ function buildComment(cmt,depth,signalId){
         var rep=el.querySelector('.comment-replies');
         var nc=res.data;nc._liked=false;
         rep.appendChild(buildComment(nc,depth+1,signalId));
+        rep.classList.add('open'); // auto-open so the new reply is visible
+        // update or create the toggle button count
+        var existingTog=el.querySelector('.replies-toggle');
+        var repCount=rep.querySelectorAll('.comment-item').length;
+        var arrowSvg2='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>';
+        if(existingTog){
+          existingTog.classList.add('expanded');
+          existingTog.querySelector('span').textContent=repCount+' repl'+(repCount===1?'y':'ies');
+        } else {
+          var togBtn2=document.createElement('button');
+          togBtn2.className='replies-toggle expanded';
+          togBtn2.innerHTML=arrowSvg2+'<span>'+repCount+' repl'+(repCount===1?'y':'ies')+'</span>';
+          el.insertBefore(togBtn2,rep);
+          togBtn2.onclick=function(e){
+            e.stopPropagation();
+            var open=rep.classList.toggle('open');
+            togBtn2.classList.toggle('expanded',open);
+          };
+        }
         if(!el.querySelector('.comment-thread-line')){
           var ln=document.createElement('div');ln.className='comment-thread-line';el.appendChild(ln);
         }
@@ -1258,11 +1338,23 @@ function buildComment(cmt,depth,signalId){
     };
   }
 
-  // render existing replies
+  // render existing replies — collapsed by default, toggled by button
   var repliesC=el.querySelector('.comment-replies');
   if(cmt._replies&&cmt._replies.length){
+    // Build toggle button showing reply count
+    var togBtn=document.createElement('button');
+    togBtn.className='replies-toggle';
+    var arrowSvg='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>';
+    togBtn.innerHTML=arrowSvg+'<span>'+cmt._replies.length+' repl'+(cmt._replies.length===1?'y':'ies')+'</span>';
+    el.insertBefore(togBtn,repliesC);
+    // Populate replies into DOM (hidden)
     cmt._replies.forEach(function(r){repliesC.appendChild(buildComment(r,depth+1,signalId));});
     var ln=document.createElement('div');ln.className='comment-thread-line';el.appendChild(ln);
+    togBtn.onclick=function(e){
+      e.stopPropagation();
+      var open=repliesC.classList.toggle('open');
+      togBtn.classList.toggle('expanded',open);
+    };
   }
   return el;
 }
@@ -1426,13 +1518,9 @@ function makeCard(signal,index){
   });
   // NOTE: outside-click closing is handled by a single delegated listener set up once (see bottom of script)
   card.onclick=function(e){
-    // only trigger if click landed directly on card or post-text (not on action buttons / comment section)
-    if(e.target.closest('.post-actions')||e.target.closest('.comments-section'))return;
-    if(cmtSection.style.display==='none'||cmtSection.style.display===''){
-      openComments();
-    }else{
-      closeComments();
-    }
+    // Open thread view on card click — ignore action buttons and report menu
+    if(e.target.closest('.post-actions')||e.target.closest('.comments-section')||e.target.closest('.report-menu'))return;
+    openThreadView(signal);
   };
 
   // comments toggle
@@ -1464,11 +1552,7 @@ function makeCard(signal,index){
 
   cmtBtn.onclick=function(e){
     e.stopPropagation();
-    if(cmtSection.style.display==='none'||cmtSection.style.display===''){
-      openComments();
-    }else{
-      closeComments();
-    }
+    openThreadView(signal);
   };
 
   inp.oninput=function(){submitBtn.classList.toggle('active',inp.value.trim().length>0);};
@@ -1499,6 +1583,130 @@ function makeCard(signal,index){
   inp.onclick=function(e){e.stopPropagation();};
   return card;
 }
+
+// ── Thread view ──
+var threadPanel=document.getElementById('threadPanel');
+var threadPanelBody=document.getElementById('threadPanelBody');
+var threadBackBtn=document.getElementById('threadBackBtn');
+
+function openThreadView(signal){
+  threadPanelBody.innerHTML='';
+
+  // Build signal card at top
+  var sc=document.createElement('div');
+  sc.className='thread-signal-card';
+  sc.innerHTML=
+    '<p class="thread-signal-text">'+escHtml(signal.text)+'</p>'+
+    '<div class="thread-signal-meta">'+
+      '<span class="post-time">'+formatTime(signal.created_at)+'</span>'+
+      '<button class="action-btn like-btn'+(signal._liked?' liked':'')+'" id="tl-'+signal.id+'">'+
+        '<svg width="15" height="14" viewBox="0 0 14 13" fill="'+(signal._liked?'currentColor':'none')+'" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 11.5S1.5 8 1.5 4.5a2.75 2.75 0 0 1 5.5-.5 2.75 2.75 0 0 1 5.5.5C12.5 8 7 11.5 7 11.5z"/></svg>'+
+        '<span>'+formatNum(signal.likes)+'</span>'+
+      '</button>'+
+    '</div>';
+  // Wire like button in thread view
+  var tLikeBtn=sc.querySelector('#tl-'+signal.id);
+  tLikeBtn.onclick=async function(e){
+    e.stopPropagation();
+    if(tLikeBtn.disabled)return;
+    tLikeBtn.disabled=true;
+    var res=await sb.rpc('toggle_like',{p_signal_id:signal.id,p_fingerprint:DEVICE_FP});
+    tLikeBtn.disabled=false;
+    if(res.error)return;
+    var nowLiked=res.data.liked;
+    signal._liked=nowLiked;
+    var delta=nowLiked?1:-1;
+    signal.likes=Math.max(0,signal.likes+delta);
+    tLikeBtn.classList.toggle('liked',nowLiked);
+    tLikeBtn.querySelector('svg').setAttribute('fill',nowLiked?'currentColor':'none');
+    tLikeBtn.querySelector('span').textContent=formatNum(signal.likes);
+    // sync back to feed card
+    var feedCard=document.querySelector('[data-signal-id="'+signal.id+'"]');
+    if(feedCard){
+      var feedLike=feedCard.querySelector('[data-action="like"]');
+      feedLike.classList.toggle('liked',nowLiked);
+      feedLike.querySelector('svg').setAttribute('fill',nowLiked?'currentColor':'none');
+      feedLike.querySelector('span').textContent=formatNum(signal.likes);
+    }
+  };
+  threadPanelBody.appendChild(sc);
+
+  // Comments section
+  var cWrap=document.createElement('div');
+  cWrap.className='thread-comments-wrap';
+  cWrap.innerHTML='<div class="thread-comments-label">responses</div><div class="thread-comments-list"><div class="no-comments">loading responses...</div></div>';
+  threadPanelBody.appendChild(cWrap);
+
+  // Comment input bar
+  var inputBar=document.createElement('div');
+  inputBar.className='comment-input-bar';
+  inputBar.innerHTML=
+    '<div class="comment-input-top">'+
+      '<div class="comment-input-avatar">anon</div>'+
+      '<textarea class="comment-input" placeholder="add a response..." maxlength="5000" rows="2"></textarea>'+
+    '</div>'+
+    '<div class="comment-input-actions">'+
+      '<button class="comment-submit"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>'+
+    '</div>';
+  threadPanelBody.appendChild(inputBar);
+
+  var inp=inputBar.querySelector('.comment-input');
+  var submitBtn=inputBar.querySelector('.comment-submit');
+  var cmtList=cWrap.querySelector('.thread-comments-list');
+
+  inp.oninput=function(){submitBtn.classList.toggle('active',inp.value.trim().length>0);};
+
+  // Load comments
+  sb.from('comments').select('*').eq('signal_id',signal.id).eq('mod_status','visible').order('created_at',{ascending:true}).then(function(res){
+    cmtList.innerHTML='';
+    if(res.error||!res.data||!res.data.length){
+      cmtList.innerHTML='<p class="no-comments">no responses yet. be the first.</p>';
+    } else {
+      var nested=nestComments(res.data);
+      nested.forEach(function(c){cmtList.appendChild(buildComment(c,0,signal.id));});
+    }
+  });
+
+  var tCommentSubmitting=false;
+  async function addThreadComment(){
+    var t=inp.value.trim();if(!t||tCommentSubmitting)return;
+    tCommentSubmitting=true;submitBtn.classList.remove('active');submitBtn.style.opacity='0.4';
+    var res=await sb.rpc('emit_comment',{p_fingerprint:DEVICE_FP,p_signal_id:signal.id,p_text:t,p_parent_id:null});
+    tCommentSubmitting=false;submitBtn.style.opacity='';
+    if(res.error){submitBtn.classList.toggle('active',inp.value.trim().length>0);return;}
+    signal.comments=(signal.comments||0)+1;
+    sb.rpc('increment_signal_comments',{p_id:signal.id,p_delta:1});
+    // Update feed card count
+    var feedCard=document.querySelector('[data-signal-id="'+signal.id+'"]');
+    if(feedCard){feedCard.querySelector('.cmt-count').textContent=formatNum(signal.comments);}
+    inp.value='';submitBtn.classList.remove('active');
+    myCommentIds.push(res.data.id);
+    try{sessionStorage.setItem('cf_mine_cmts',JSON.stringify(myCommentIds));}catch(e){}
+    cmtList.querySelectorAll('.no-comments').forEach(function(e){e.remove();});
+    var nc=res.data;nc._liked=false;nc._replies=[];
+    cmtList.appendChild(buildComment(nc,0,signal.id));
+    cmtList.lastElementChild.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+  submitBtn.onclick=function(e){e.stopPropagation();addThreadComment();};
+  inp.onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();addThreadComment();}};
+
+  // Open panel
+  threadPanel.classList.add('open');
+  threadPanel.scrollTop=0;
+  document.body.style.overflow='hidden'; // prevent background scroll
+}
+
+function closeThreadView(){
+  threadPanel.classList.remove('open');
+  document.body.style.overflow='';
+}
+
+threadBackBtn.onclick=closeThreadView;
+
+// Close thread on browser back
+window.addEventListener('popstate',function(){
+  if(threadPanel.classList.contains('open'))closeThreadView();
+});
 
 // ── Tabs ──
 document.querySelectorAll('.tab').forEach(function(t){
