@@ -45,7 +45,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 60px;height:72px;d
 .nav-cta{background:var(--g1);border:none;border-radius:8px;padding:9px 22px;color:white;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:opacity 0.2s,transform 0.2s}
 .nav-cta:hover{opacity:0.85;transform:translateY(-1px)}
 .hero{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 40px 80px}
-.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);border:1px solid rgba(167,139,250,0.35);border-radius:20px;padding:6px 16px;margin-bottom:40px;background:rgba(167,139,250,0.10);max-width:92vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);border:1px solid rgba(167,139,250,0.35);border-radius:20px;padding:6px 16px;margin-bottom:40px;background:rgba(167,139,250,0.10);white-space:nowrap;box-sizing:border-box}
 .hero-eyebrow-dot{width:5px;height:5px;border-radius:50%;background:var(--a);box-shadow:0 0 8px var(--a);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
 .hero-title{font-family:'Space Grotesk',sans-serif;font-size:clamp(48px,8vw,96px);font-weight:700;line-height:1.0;letter-spacing:-2px;margin-bottom:12px}
@@ -498,7 +498,7 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(167,139,250,0.18);p
     <div class="signal-card sc3">"anonymity is not hiding. it is arriving without prejudice."<div class="signal-card-meta">· 12m ago &nbsp;·&nbsp; 8 echoes</div></div>
     <div class="signal-card sc4">"your name is a filter. remove it and see what remains."<div class="signal-card-meta">· 19m ago &nbsp;·&nbsp; 47 echoes</div></div>
   </div>
-  <div class="hero-eyebrow"><div class="hero-eyebrow-dot"></div>no accounts · no identity · no trace</div>
+  <div class="hero-eyebrow"><div class="hero-eyebrow-dot"></div>no identity · no trace</div>
   <h1 class="hero-title"><span class="hero-title-line1">Speak freely.</span><span class="hero-title-line2">Leave no shadow.</span></h1>
   <p class="hero-sub">CipherFlux is a fully anonymous signal stream. No usernames, no profiles, no data collected. Just raw thought — in perpetual motion.</p>
   <div class="hero-actions">
