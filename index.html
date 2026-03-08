@@ -160,7 +160,22 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(167,139,250,0.18);p
 .refresh-btn.spinning svg{animation:spin 0.8s ease}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 .tabs-wrap{position:sticky;top:72px;z-index:99;background:rgba(3,2,10,0.88);backdrop-filter:blur(28px);border-bottom:1px solid rgba(167,139,250,0.18)}
-.tabs{max-width:1100px;margin:0 auto;padding:0 48px;display:flex}
+.tabs-inner{max-width:1100px;margin:0 auto;padding:0 48px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.tabs{display:flex;flex-shrink:0}
+/* ── Deep search ── */
+.deep-search{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.deep-search-icon-btn{background:none;border:none;color:var(--muted);cursor:pointer;padding:8px 6px;display:flex;align-items:center;border-radius:8px;transition:color 0.2s,background 0.2s;line-height:0}
+.deep-search-icon-btn:hover{color:var(--text);background:rgba(167,139,250,0.08)}
+.deep-search-icon-btn.lit{color:var(--a)}
+.deep-search-pill{display:flex;align-items:center;gap:6px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.20);border-radius:20px;padding:5px 14px;max-width:0;overflow:hidden;opacity:0;transition:max-width 0.35s cubic-bezier(0.4,0,0.2,1),opacity 0.25s,border-color 0.2s,padding 0.2s}
+.deep-search-pill.open{max-width:240px;opacity:1;padding:5px 14px}
+.deep-search-pill.open:focus-within{border-color:rgba(167,139,250,0.5)}
+.deep-search-input{background:none;border:none;outline:none;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1.5px;width:180px;caret-color:var(--a);white-space:nowrap}
+.deep-search-input::placeholder{color:var(--muted);opacity:0.55}
+.deep-search-x{background:none;border:none;color:var(--muted);cursor:pointer;padding:0;font-size:13px;line-height:1;flex-shrink:0;transition:color 0.15s;display:none}
+.deep-search-x.show{display:block}
+.deep-search-x:hover{color:var(--text)}
+.search-hits-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);text-align:center;padding:14px 0 2px}
 .tab{background:none;border:none;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:14px;letter-spacing:2.5px;text-transform:uppercase;padding:16px 28px;cursor:pointer;position:relative;transition:color 0.2s}
 .tab:hover{color:#6a5a8a}
 .tab.active{color:var(--text)}
@@ -281,9 +296,12 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(167,139,250,0.18);p
   .app-header-right{flex:1 1 100%;justify-content:flex-end}
   /* Tabs */
   .tabs-wrap{top:auto}
-  .tabs{padding:0 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .tabs-inner{padding:0 8px;gap:4px}
+  .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
   .tabs::-webkit-scrollbar{display:none}
   .tab{padding:14px 16px;font-size:13px;letter-spacing:1.5px;white-space:nowrap}
+  .deep-search-pill.open{max-width:130px}
+  .deep-search-input{width:90px}
   /* Stats bar */
   .stats-bar-inner{padding:10px 16px;gap:20px}
   .sstat-value{font-size:17px}
@@ -631,10 +649,21 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(167,139,250,0.18);p
       <button class="refresh-btn" id="refreshBtn"><svg width="16" height="16" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 7.5a6 6 0 1 1-1.5-4M13.5 2v3.5H10"/></svg></button>
     </div>
   </div></div>
-  <div class="tabs-wrap"><div class="tabs">
-    <button class="tab active" data-tab="stream">stream</button>
-    <button class="tab" data-tab="rising">rising</button>
-    <button class="tab" data-tab="deep">deep</button>
+  <div class="tabs-wrap"><div class="tabs-inner">
+    <div class="tabs">
+      <button class="tab active" data-tab="stream">stream</button>
+      <button class="tab" data-tab="rising">rising</button>
+      <button class="tab" data-tab="deep">deep</button>
+    </div>
+    <div class="deep-search" id="deepSearch" style="visibility:visible">
+      <div class="deep-search-pill" id="deepSearchPill">
+        <input class="deep-search-input" id="deepSearchInput" placeholder="search deep..." autocomplete="off" spellcheck="false"/>
+        <button class="deep-search-x" id="deepSearchX" aria-label="clear search">✕</button>
+      </div>
+      <button class="deep-search-icon-btn" id="deepSearchBtn" aria-label="search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+    </div>
   </div></div>
   <div class="stats-bar"><div class="stats-bar-inner">
     <div class="sstat"><span class="sstat-value" id="statCount">0</span><span class="sstat-label">signals</span></div>
@@ -1051,6 +1080,69 @@ function saveLikedComments(){} // no-op: DB is source of truth
 var activeTab='stream';
 var signalsCache=[];
 
+// ══════════════════════════════════════
+// PREFERENCE ENGINE — Stream only
+// Session memory only. Never sent to server.
+// ══════════════════════════════════════
+var prefs={
+  viewed:{},expanded:{},liked:{},
+  lengthScore:{short:0,medium:0,long:0},
+  engagementScore:{low:0,mid:0,high:0},
+  total:0,
+  ready:function(){return this.total>=3;}
+};
+function _prefLength(text){var l=(text||'').length;return l<100?'short':l<400?'medium':'long';}
+function _prefEngagement(s){var e=(s.likes||0)+(s.comments||0);return e<3?'low':e<15?'mid':'high';}
+function prefTrackExpand(s){
+  if(prefs.expanded[s.id])return;
+  prefs.expanded[s.id]=true;prefs.total++;
+  prefs.lengthScore[_prefLength(s.text)]+=3;
+  prefs.engagementScore[_prefEngagement(s)]+=3;
+}
+function prefTrackLike(s){
+  if(prefs.liked[s.id])return;
+  prefs.liked[s.id]=true;prefs.total++;
+  prefs.lengthScore[_prefLength(s.text)]+=2;
+  prefs.engagementScore[_prefEngagement(s)]+=2;
+}
+function prefTrackDwell(s,secs){
+  if(!prefs.viewed[s.id])prefs.viewed[s.id]=0;
+  prefs.viewed[s.id]+=secs;
+  if(secs>=4&&!prefs.expanded[s.id]&&!prefs.liked[s.id]){
+    prefs.total++;
+    prefs.lengthScore[_prefLength(s.text)]+=1;
+    prefs.engagementScore[_prefEngagement(s)]+=1;
+  }
+}
+function prefScore(s){
+  if(!prefs.ready())return 0;
+  var score=0;
+  var maxL=Math.max(1,prefs.lengthScore.short,prefs.lengthScore.medium,prefs.lengthScore.long);
+  var maxE=Math.max(1,prefs.engagementScore.low,prefs.engagementScore.mid,prefs.engagementScore.high);
+  score+=(prefs.lengthScore[_prefLength(s.text)]/maxL)*4;
+  score+=(prefs.engagementScore[_prefEngagement(s)]/maxE)*4;
+  if(prefs.expanded[s.id])score-=5;
+  var dwell=prefs.viewed[s.id]||0;
+  if(dwell>=8)score+=2;else if(dwell>=4)score+=1;
+  return score;
+}
+// Dwell time observer
+var _dwellTimers={};
+var dwellObs=new IntersectionObserver(function(entries){
+  entries.forEach(function(entry){
+    var id=entry.target.getAttribute('data-signal-id');
+    if(!id)return;
+    if(entry.isIntersecting){
+      _dwellTimers[id]=Date.now();
+    } else if(_dwellTimers[id]){
+      var secs=(Date.now()-_dwellTimers[id])/1000;
+      var sig=signalsCache.find(function(s){return s.id===id;});
+      if(sig)prefTrackDwell(sig,secs);
+      delete _dwellTimers[id];
+    }
+  });
+},{threshold:0.5});
+
 function formatNum(n){n=parseInt(n)||0;if(n>=1000){var k=n/1000;return(k===Math.floor(k)?k.toFixed(0):k.toFixed(1))+'k';}return n;}
 function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function formatTime(ts){return new Date(ts).toLocaleString(navigator.language,{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});}
@@ -1100,6 +1192,16 @@ async function loadSignals(){
     rows.sort(function(a,b){return b.likes-a.likes;});
   } else if(activeTab==='deep'){
     rows.sort(function(a,b){return b.comments-a.comments;});
+  } else if(activeTab==='stream'&&prefs.ready()){
+    // gentle preference nudge on top of chronological — stream only
+    rows=rows.map(function(s){return{s:s,boost:prefScore(s)};})
+      .sort(function(a,b){return(b.boost-a.boost)*0.35;})
+      .map(function(item){return item.s;});
+  }
+
+  if(_dsQuery){
+    var q=_dsQuery.toLowerCase();
+    rows=rows.filter(function(s){return s.text&&s.text.toLowerCase().indexOf(q)!==-1;});
   }
 
   signalsCache=rows;
@@ -1110,9 +1212,24 @@ function renderSignals(){
   var feed=document.getElementById('feed');
   var empty=document.getElementById('emptyState');
   document.querySelectorAll('#feed .post-card').forEach(function(e){e.remove();});
+  document.querySelectorAll('#feed .search-hits-label').forEach(function(e){e.remove();});
   document.getElementById('statCount').textContent=signalsCache.length;
-  if(!signalsCache.length){empty.style.display='block';return;}
+  if(!signalsCache.length){
+    empty.style.display='block';
+    if(_dsQuery){
+      empty.innerHTML='no signals match &ldquo;<span style="color:var(--a)">'+escHtml(_dsQuery)+'</span>&rdquo;';
+    } else {
+      empty.innerHTML='the stream is silent<br/><span style="font-size:10px;opacity:0.4;letter-spacing:2px">emit the first signal</span>';
+    }
+    return;
+  }
   empty.style.display='none';
+  if(_dsQuery){
+    var lbl=document.createElement('div');
+    lbl.className='search-hits-label';
+    lbl.textContent=signalsCache.length+' result'+(signalsCache.length!==1?'s':'')+' · "'+_dsQuery+'"';
+    feed.appendChild(lbl);
+  }
   signalsCache.forEach(function(signal,i){feed.appendChild(makeCard(signal,i));});
 }
 
@@ -1350,6 +1467,7 @@ function makeCard(signal,index){
   card.className='post-card';
   card.setAttribute('data-signal-id',signal.id);
   card.style.animationDelay=(index*60)+'ms';
+  dwellObs.observe(card);
   card.innerHTML=
     '<div class="post-glow"></div>'+
     '<p class="post-text">'+escHtml(signal.text)+'</p>'+
@@ -1416,6 +1534,7 @@ function makeCard(signal,index){
     likeBtn.querySelector('span').textContent=formatNum(newCount);
     if(nowLiked){
       if(likedSignalIds.indexOf(signal.id)===-1){likedSignalIds.push(signal.id);}
+      prefTrackLike(signal);
     }else{
       likedSignalIds=likedSignalIds.filter(function(id){return id!==signal.id;});
     }
@@ -1486,8 +1605,8 @@ function makeCard(signal,index){
   });
   // NOTE: outside-click closing is handled by a single delegated listener set up once (see bottom of script)
   card.onclick=function(e){
-    // Open thread view on card click — ignore action buttons and report menu
     if(e.target.closest('.post-actions')||e.target.closest('.comments-section')||e.target.closest('.report-menu'))return;
+    prefTrackExpand(signal);
     openThreadView(signal);
   };
 
@@ -1680,8 +1799,61 @@ window.addEventListener('popstate',function(){
 document.querySelectorAll('.tab').forEach(function(t){
   t.onclick=function(){
     document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active');});
-    t.classList.add('active');activeTab=t.dataset.tab;loadSignals();
+    t.classList.add('active');
+    activeTab=t.dataset.tab;
+    loadSignals();
   };
+});
+
+// ── Deep Search ──
+var _dsOpen=false;
+var _dsQuery='';
+var _dsTimer=null;
+
+function _dsClose(clearAll){
+  var pill=document.getElementById('deepSearchPill');
+  var btn=document.getElementById('deepSearchBtn');
+  var input=document.getElementById('deepSearchInput');
+  var x=document.getElementById('deepSearchX');
+  pill.classList.remove('open');
+  btn.classList.remove('lit');
+  _dsOpen=false;
+  if(clearAll){
+    input.value='';
+    _dsQuery='';
+    x.classList.remove('show');
+    loadSignals();
+  }
+}
+
+document.getElementById('deepSearchBtn').onclick=function(){
+  if(!_dsOpen){
+    document.getElementById('deepSearchPill').classList.add('open');
+    this.classList.add('lit');
+    _dsOpen=true;
+    setTimeout(function(){document.getElementById('deepSearchInput').focus();},320);
+  } else {
+    _dsClose(true);
+  }
+};
+
+document.getElementById('deepSearchX').onclick=function(){
+  var input=document.getElementById('deepSearchInput');
+  input.value='';_dsQuery='';
+  this.classList.remove('show');
+  input.focus();
+  loadSignals();
+};
+
+document.getElementById('deepSearchInput').addEventListener('input',function(){
+  _dsQuery=this.value.trim();
+  document.getElementById('deepSearchX').classList.toggle('show',_dsQuery.length>0);
+  clearTimeout(_dsTimer);
+  _dsTimer=setTimeout(function(){loadSignals();},320);
+});
+
+document.getElementById('deepSearchInput').addEventListener('keydown',function(e){
+  if(e.key==='Escape')_dsClose(true);
 });
 
 // ── Refresh ──
@@ -1866,16 +2038,18 @@ async function adminLogin(){
   var errEl=document.getElementById('adminGateErr');
   errEl.textContent='';
   if(!key){errEl.textContent='enter your admin key';return;}
-  // Test the key by calling mod_action with a test ping
-  var r=await sb.rpc('mod_action',{p_admin_key:key,p_target_type:'signal',p_target_id:'00000000-0000-0000-0000-000000000000',p_action:'ping'});
+  // Hash the key client-side — plaintext never leaves the browser
+  var keyHash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(key));
+  var keyHex=Array.from(new Uint8Array(keyHash)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+  // Test the key by calling mod_action with a ping
+  var r=await sb.rpc('mod_action',{p_admin_key:keyHex,p_target_type:'signal',p_target_id:'00000000-0000-0000-0000-000000000000',p_action:'ping'});
   if(r.error&&r.error.message&&r.error.message.includes('invalid_admin_key')){
     errEl.textContent='invalid key';
     document.getElementById('adminKeyInput').value='';
     return;
   }
-  // Any other error (like record not found for ping) means key was accepted
   ADMIN_SESSION=true;
-  ADMIN_KEY_HASH=key;
+  ADMIN_KEY_HASH=keyHex;
   document.getElementById('adminGate').style.display='none';
   document.getElementById('adminDash').style.display='block';
   loadAdminData();
@@ -1937,7 +2111,7 @@ function renderAdminQueue(){
     var riskClass=score>=70?'high':score>=40?'med':'low';
     var riskLabel='risk: '+score;
     var reasons=(item.risk_reasons||[]).map(function(r){
-      return '<span class="admin-reason-tag">'+r+'</span>';
+      return '<span class="admin-reason-tag">'+escHtml(r)+'</span>';
     }).join('');
     var age=timeAgo(item.created_at);
     var card=document.createElement('div');
