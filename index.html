@@ -160,31 +160,30 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(167,139,250,0.18);p
 .refresh-btn.spinning svg{animation:spin 0.8s ease}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 .tabs-wrap{position:sticky;top:72px;z-index:99;background:rgba(3,2,10,0.88);backdrop-filter:blur(28px);border-bottom:1px solid rgba(167,139,250,0.18)}
-.tabs-inner{max-width:1100px;margin:0 auto;padding:0 48px;display:flex;align-items:center;justify-content:space-between;gap:12px;box-sizing:border-box;width:100%;overflow:hidden}
-.tabs{display:flex;flex-shrink:0}
-/* ── Deep search ── */
-.deep-search{display:flex;align-items:center;gap:4px;flex-shrink:0;margin-right:0}
-.deep-search-icon-btn{background:none;border:none;color:var(--muted);cursor:pointer;padding:8px 6px;display:flex;align-items:center;border-radius:8px;transition:color 0.2s,background 0.2s;line-height:0}
-.deep-search-icon-btn:hover{color:var(--text);background:rgba(167,139,250,0.08)}
-.deep-search-icon-btn.lit{color:var(--a)}
-.deep-search-pill{display:flex;align-items:center;gap:6px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.20);border-radius:20px;padding:5px 14px;max-width:0;overflow:hidden;opacity:0;transition:max-width 0.35s cubic-bezier(0.4,0,0.2,1),opacity 0.25s,border-color 0.2s,padding 0.2s}
-.deep-search-pill.open{max-width:240px;opacity:1;padding:5px 14px}
-.deep-search-pill.open:focus-within{border-color:rgba(167,139,250,0.5)}
-.deep-search-input{background:none;border:none;outline:none;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1.5px;width:180px;caret-color:var(--a);white-space:nowrap}
-.deep-search-input::placeholder{color:var(--muted);opacity:0.55}
-.deep-search-x{background:none;border:none;color:var(--muted);cursor:pointer;padding:0;font-size:13px;line-height:1;flex-shrink:0;transition:color 0.15s;display:none}
-.deep-search-x.show{display:block}
-.deep-search-x:hover{color:var(--text)}
-.search-hits-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);text-align:center;padding:14px 0 2px}
+.tabs-inner{max-width:1100px;margin:0 auto;padding:0 48px;display:flex;align-items:center}
+.tabs{display:flex}
 .tab{background:none;border:none;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:14px;letter-spacing:2.5px;text-transform:uppercase;padding:16px 28px;cursor:pointer;position:relative;transition:color 0.2s}
 .tab:hover{color:#6a5a8a}
 .tab.active{color:var(--text)}
 .tab.active::after{content:'';position:absolute;bottom:-1px;left:28px;right:28px;height:1px;background:var(--g1)}
 .stats-bar{border-bottom:1px solid var(--border);position:relative;z-index:1}
-.stats-bar-inner{max-width:1100px;margin:0 auto;padding:16px 48px;display:flex;gap:32px}
+.stats-bar-inner{max-width:1100px;margin:0 auto;padding:12px 48px;display:flex;align-items:center;justify-content:space-between;gap:16px}
 .sstat{display:flex;align-items:baseline;gap:10px}
 .sstat-value{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:600;background:var(--g2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .sstat-label{font-size:13px;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
+.search-bar-wrap{display:flex;align-items:center;gap:8px;margin-left:auto}
+.search-pill{display:flex;align-items:center;gap:6px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.20);border-radius:20px;padding:5px 14px;max-width:0;overflow:hidden;opacity:0;transition:max-width 0.35s cubic-bezier(0.4,0,0.2,1),opacity 0.25s,border-color 0.2s}
+.search-pill.open{max-width:280px;opacity:1}
+.search-pill.open:focus-within{border-color:rgba(167,139,250,0.5)}
+.search-pill-input{background:none;border:none;outline:none;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1.5px;width:220px;caret-color:var(--a)}
+.search-pill-input::placeholder{color:var(--muted);opacity:0.55}
+.search-pill-x{background:none;border:none;color:var(--muted);cursor:pointer;padding:0;font-size:13px;line-height:1;flex-shrink:0;display:none;transition:color 0.15s}
+.search-pill-x.show{display:block}
+.search-pill-x:hover{color:var(--text)}
+.search-pill-btn{background:none;border:none;color:var(--muted);cursor:pointer;padding:7px;display:flex;align-items:center;border-radius:8px;transition:color 0.2s,background 0.2s;flex-shrink:0;line-height:0}
+.search-pill-btn:hover{color:var(--text);background:rgba(167,139,250,0.08)}
+.search-pill-btn.lit{color:var(--a)}
+.search-hits-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);text-align:center;padding:14px 0 2px}
 .feed{max-width:1100px;margin:0 auto;padding:24px 48px 140px;position:relative;z-index:1}
 .empty-state{text-align:center;color:var(--muted);padding:100px 0 40px;font-size:12px;letter-spacing:3px;text-transform:uppercase;line-height:2.8}
 .loading-state{text-align:center;color:var(--muted);padding:60px 0;font-size:11px;letter-spacing:3px;text-transform:uppercase}
@@ -296,17 +295,16 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(167,139,250,0.18);p
   .app-header-right{flex:1 1 100%;justify-content:flex-end}
   /* Tabs */
   .tabs-wrap{top:auto}
-  .tabs-inner{padding:0 4px 0 8px;gap:0}
+  .tabs-inner{padding:0 8px;gap:0}
   .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
   .tabs::-webkit-scrollbar{display:none}
   .tab{padding:14px 16px;font-size:13px;letter-spacing:1.5px;white-space:nowrap}
-  .deep-search{padding-right:4px}
-  .deep-search-pill.open{max-width:130px}
-  .deep-search-input{width:90px}
-  /* Stats bar */
-  .stats-bar-inner{padding:10px 16px;gap:20px}
+  /* Stats bar + search */
+  .stats-bar-inner{padding:10px 16px;gap:12px}
   .sstat-value{font-size:17px}
   .sstat-label{font-size:12px;letter-spacing:1px}
+  .search-pill.open{max-width:calc(100vw - 140px)}
+  .search-pill-input{width:100%}
   /* Feed */
   .feed{padding:16px 12px 120px}
   /* Post card */
@@ -656,18 +654,18 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(167,139,250,0.18);p
       <button class="tab" data-tab="rising">rising</button>
       <button class="tab" data-tab="deep">deep</button>
     </div>
-    <div class="deep-search" id="deepSearch" style="visibility:visible">
-      <div class="deep-search-pill" id="deepSearchPill">
-        <input class="deep-search-input" id="deepSearchInput" placeholder="search deep..." autocomplete="off" spellcheck="false"/>
-        <button class="deep-search-x" id="deepSearchX" aria-label="clear search">✕</button>
-      </div>
-      <button class="deep-search-icon-btn" id="deepSearchBtn" aria-label="search">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      </button>
-    </div>
   </div></div>
   <div class="stats-bar"><div class="stats-bar-inner">
     <div class="sstat"><span class="sstat-value" id="statCount">0</span><span class="sstat-label">signals</span></div>
+    <div class="search-bar-wrap" id="searchBarWrap">
+      <div class="search-pill" id="searchPill">
+        <input class="search-pill-input" id="deepSearchInput" placeholder="search signals..." autocomplete="off" spellcheck="false"/>
+        <button class="search-pill-x" id="deepSearchX" aria-label="clear">✕</button>
+      </div>
+      <button class="search-pill-btn" id="deepSearchBtn" aria-label="search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+    </div>
   </div></div>
   <div class="feed" id="feed">
     <div class="loading-state" id="loadingState">tuning into the stream...</div>
@@ -1812,7 +1810,7 @@ var _dsQuery='';
 var _dsTimer=null;
 
 function _dsClose(clearAll){
-  var pill=document.getElementById('deepSearchPill');
+  var pill=document.getElementById('searchPill');
   var btn=document.getElementById('deepSearchBtn');
   var input=document.getElementById('deepSearchInput');
   var x=document.getElementById('deepSearchX');
@@ -1829,7 +1827,7 @@ function _dsClose(clearAll){
 
 document.getElementById('deepSearchBtn').onclick=function(){
   if(!_dsOpen){
-    document.getElementById('deepSearchPill').classList.add('open');
+    document.getElementById('searchPill').classList.add('open');
     this.classList.add('lit');
     _dsOpen=true;
     setTimeout(function(){document.getElementById('deepSearchInput').focus();},320);
